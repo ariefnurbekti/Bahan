@@ -16,7 +16,7 @@
 
 <section class="panel" style="margin-bottom:18px">
 <div class="products-head">
-  <div><h2>Database & Histori Pesanan Pelanggan</h2><p class="sub">Data pesanan otomatis masuk dari website publik.</p></div>
+  <div><h2>Database & Histori Pesanan Pelanggan</h2><p class="sub">Mode uji: data pesanan dibaca dari orders.json di repository GitHub.</p><p class="hint" style="color:var(--red);font-weight:800">PERINGATAN: Repository Bahan bersifat publik. Data pesanan dan informasi pelanggan yang tersimpan di orders.json dapat dibaca siapa saja. Gunakan data palsu untuk pengujian; jangan gunakan data pelanggan sungguhan.</p></div>
   <button class="btn primary" onclick="exportOrdersToExcel()">📥 Unduh ke Excel (CSV)</button>
 </div>
 <div class="table-responsive">
@@ -32,7 +32,7 @@
       </tr>
     </thead>
     <tbody id="ordersTableBody">
-      <tr><td colspan="6" class="empty">Memuat data pesanan...</td></tr>
+      <tr><td colspan="6" class="empty">Hubungkan backend untuk melihat data pesanan.</td></tr>
     </tbody>
   </table>
 </div>
@@ -45,7 +45,7 @@
 <div class="field"><label for="ghUser">Username GitHub</label><input id="ghUser" placeholder="namapengguna"></div>
 <div class="field"><label for="ghRepo">Nama Repository</label><input id="ghRepo" placeholder="tahu-tempe-store"></div>
 <div class="field"><label for="ghToken">GitHub Personal Access Token (PAT)</label><input id="ghToken" type="password" placeholder="Diperlukan untuk menyimpan katalog"></div>
-<p class="hint">Token ini disimpan hanya di browser admin. Order otomatis dari pengunjung memerlukan token di konfigurasi index.html, yang akan terlihat oleh publik; tanpa token, checkout WhatsApp tetap berjalan tetapi order tidak tersimpan di GitHub.</p>
+<p class="hint">Mode uji saja: token disimpan di browser ini. Halaman toko hanya dapat merekam order jika dibuka pada browser/origin yang sama. Token dapat diakses oleh JavaScript pada situs ini; jangan gunakan PAT sensitif atau aktifkan untuk pelanggan umum.</p>
 <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
 <div class="field"><label for="store">Nama Toko</label><input id="store" maxlength="60" placeholder="Segar Tahu & Tempe"></div>
 <div class="field"><label for="wa">Nomor WhatsApp</label><input id="wa" inputmode="tel" placeholder="6281234567890"></div>
@@ -175,19 +175,30 @@ async function loadCatalogFromGitHub(){
 }
 
 async function loadOrdersFromGitHub(){
-  let user=document.getElementById('ghUser').value.trim();
-  let repo=document.getElementById('ghRepo').value.trim();
-  let token=document.getElementById('ghToken').value.trim();
-  if(!user||!repo) return;
+  const user=document.getElementById('ghUser').value.trim();
+  const repo=document.getElementById('ghRepo').value.trim();
+  const token=document.getElementById('ghToken').value.trim();
+  if(!user||!repo){
+    toast('Isi username dan repository GitHub.');
+    return;
+  }
+  localStorage.setItem('gh_user',user);
+  localStorage.setItem('gh_repo',repo);
+  if(token) localStorage.setItem('gh_token',token);
+  document.getElementById('ordersTableBody').innerHTML='<tr><td colspan="6" class="empty">Memuat data pesanan...</td></tr>';
   try{
-    let headers={};if(token) headers['Authorization']='token '+token;
-    let res=await fetch(`https://api.github.com/repos/${user}/${repo}/contents/orders.json`,{headers});
+    const headers={};if(token) headers.Authorization='Bearer '+token;
+    const res=await fetch(`https://api.github.com/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/contents/orders.json`,{headers});
     if(res.status===404){ordersList=[];renderOrdersTable();return}
     if(!res.ok) throw new Error(`GitHub API (${res.status})`);
-    let json=await res.json();
-    ordersList=JSON.parse(decodeBase64Utf8(json.content));
+    const file=await res.json();
+    ordersList=JSON.parse(decodeBase64Utf8(file.content));
+    if(!Array.isArray(ordersList)) throw new Error('Format orders.json tidak valid.');
     renderOrdersTable();
-  }catch(e){toast('Gagal memuat pesanan: '+e.message);}
+  }catch(e){
+    document.getElementById('ordersTableBody').innerHTML=`<tr><td colspan="6" class="empty">${esc('Gagal memuat pesanan: '+e.message)}</td></tr>`;
+    toast('Gagal memuat pesanan: '+e.message);
+  }
 }
 
 function renderOrdersTable(){
