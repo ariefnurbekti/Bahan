@@ -8,6 +8,48 @@
 .table-responsive{width:100%;overflow-x:auto;margin-top:12px}table.customer-table{width:100%;border-collapse:collapse;font-size:13px}table.customer-table th,table.customer-table td{border:1px solid var(--line);padding:10px;text-align:left}table.customer-table th{background:var(--g2);color:var(--g);font-weight:800}
 .toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#173c2a;color:white;border-radius:11px;padding:12px 16px;max-width:90%;box-shadow:0 8px 30px #0002;font-size:13px;z-index:5}
 @media(max-width:760px){.grid{grid-template-columns:1fr}.layout{padding:16px 12px 32px}.panel{padding:16px}.product-row-inputs{grid-template-columns:1fr}.product-row-bottom{grid-template-columns:1fr 90px 38px}}
+button,input,textarea{-webkit-tap-highlight-color:transparent}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #d6a43c;outline-offset:2px}
+@media(max-width:760px){
+  .layout{padding:14px 12px max(28px,env(safe-area-inset-bottom))}
+  .top{align-items:flex-start;gap:8px;margin-bottom:16px}
+  .brand{font-size:17px;line-height:1.25}
+  .brand small{font-size:11px}
+  .status{font-size:10px;padding:6px 9px;white-space:nowrap}
+  .intro{padding:18px;border-radius:16px;margin-bottom:14px}
+  .intro h1{font-size:25px;line-height:1.12}
+  .intro p{font-size:13px;line-height:1.5}
+  .grid{gap:14px}
+  .panel{padding:15px;border-radius:15px}
+  .panel h2{font-size:17px}
+  .sub{line-height:1.5;margin-bottom:13px}
+  .products-head{flex-direction:column;gap:10px}
+  .products-head>.btn{width:100%;min-height:44px}
+  .field{margin:12px 0}
+  .field label{font-size:13px;line-height:1.4}
+  .field input,.field textarea{min-height:46px;padding:11px 12px;font-size:16px}
+  .field input[type="checkbox"]{min-height:0;width:20px!important;height:20px;vertical-align:middle}
+  .btn{min-height:44px}
+  .hint{font-size:12px;line-height:1.55}
+  .table-responsive{margin-top:10px;border-radius:10px}
+  table.customer-table{min-width:720px;font-size:12px}
+  table.customer-table th,table.customer-table td{padding:9px}
+  .product-row{padding:11px;gap:9px}
+  .product-row-inputs{grid-template-columns:1fr}
+  .product-row-inputs input{min-height:44px;font-size:16px}
+  .product-row-bottom{grid-template-columns:minmax(0,1fr) minmax(80px,100px) 44px;gap:7px}
+  .product-row-bottom input{min-height:44px;min-width:0;font-size:16px}
+  .product-row-bottom .btn{min-height:44px;padding:8px}
+  .empty{padding:18px 10px}
+  .toast{bottom:max(14px,env(safe-area-inset-bottom));width:calc(100% - 28px);max-width:420px;text-align:center}
+}
+@media(max-width:360px){
+  .layout{padding-left:10px;padding-right:10px}
+  .top{flex-direction:column;align-items:flex-start}
+  .intro{padding:16px}
+  .panel{padding:13px}
+  .product-row-bottom{grid-template-columns:minmax(0,1fr) 78px 40px;gap:5px}
+}
 </style></head>
 <body>
 <div class="layout">
@@ -59,6 +101,10 @@
 <div class="field"><label for="bannerActive"><input type="checkbox" id="bannerActive" style="width:auto;margin-right:6px"> Aktifkan Banner Iklan</label></div>
 <div class="field"><label for="bannerTitle">Judul Banner / Promo</label><input id="bannerTitle" placeholder="Promo Spesial..."></div>
 <div class="field"><label for="bannerDesc">Keterangan / Kepercayaan</label><input id="bannerDesc" placeholder="100% Kedelai Murni..."></div>
+<p class="hint">Masukkan URL gambar. Foto akan ditampilkan bersama di banner halaman toko.</p>
+<div class="field"><label for="bannerImage1">URL Foto Banner 1</label><input id="bannerImage1" type="url" placeholder="https://..."></div>
+<div class="field"><label for="bannerImage2">URL Foto Banner 2</label><input id="bannerImage2" type="url" placeholder="https://..."></div>
+<div class="field"><label for="bannerImage3">URL Foto Banner 3</label><input id="bannerImage3" type="url" placeholder="https://..."></div>
 </section>
 
 <section class="panel">
@@ -81,7 +127,7 @@
 let storeData={
   storeName:'Segar Tahu & Tempe',
   waNumber:'',
-  banner:{active:true,title:'🌟 PROMO SPESIAL: 100% Kedelai Murni Pilihan!',desc:'Higienis, Tanpa Bahan Pengawet, dan Fresh Setiap Hari.'},
+  banner:{active:true,title:'🌟 PROMO SPESIAL: 100% Kedelai Murni Pilihan!',desc:'Higienis, Tanpa Bahan Pengawet, dan Fresh Setiap Hari.',images:['','','']},
   products:[
     {id:'besar',name:'Tahu Putih Besar',desc:'Tahu putih ukuran besar',image:'',price:7000},
     {id:'kecil',name:'Tahu Putih Kecil',desc:'Tahu putih ukuran kecil',image:'',price:3000},
@@ -105,6 +151,8 @@ function renderCatalog(){
   document.getElementById('bannerActive').checked=storeData.banner?.active||false;
   document.getElementById('bannerTitle').value=storeData.banner?.title||'';
   document.getElementById('bannerDesc').value=storeData.banner?.desc||'';
+  const bannerImages=Array.isArray(storeData.banner?.images)?storeData.banner.images:[];
+  for(let i=0;i<3;i++) document.getElementById(`bannerImage${i+1}`).value=bannerImages[i]||'';
   document.getElementById('count').textContent=(storeData.products||[]).length+' produk';
   
   let list=document.getElementById('list');
@@ -137,7 +185,8 @@ function collectData(){
   storeData.banner={
     active:document.getElementById('bannerActive').checked,
     title:document.getElementById('bannerTitle').value.trim(),
-    desc:document.getElementById('bannerDesc').value.trim()
+    desc:document.getElementById('bannerDesc').value.trim(),
+    images:[1,2,3].map(i=>document.getElementById(`bannerImage${i}`).value.trim())
   };
   let rows=document.querySelectorAll('.product-row');
   let newProds=[];

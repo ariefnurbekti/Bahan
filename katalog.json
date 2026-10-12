@@ -4,7 +4,12 @@
   "banner": {
     "active": true,
     "title": "🌟 PROMO SPESIAL: 100% Kedelai Murni Pilihan!",
-    "desc": "Higienis, Tanpa Bahan Pengawet, dan Fresh Setiap Hari."
+    "desc": "Higienis, Tanpa Bahan Pengawet, dan Fresh Setiap Hari.",
+    "images": [
+      "",
+      "",
+      ""
+    ]
   },
   "products": [
     {
