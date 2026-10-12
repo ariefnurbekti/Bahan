@@ -1,0 +1,39 @@
+{
+  "storeName": "Segar Tahu & Tempe",
+  "waNumber": "",
+  "banner": {
+    "active": true,
+    "title": "🌟 PROMO SPESIAL: 100% Kedelai Murni Pilihan!",
+    "desc": "Higienis, Tanpa Bahan Pengawet, dan Fresh Setiap Hari."
+  },
+  "products": [
+    {
+      "id": "besar",
+      "name": "Tahu Putih Besar",
+      "desc": "Tahu putih ukuran besar",
+      "image": "",
+      "price": 7000
+    },
+    {
+      "id": "kecil",
+      "name": "Tahu Putih Kecil",
+      "desc": "Tahu putih ukuran kecil",
+      "image": "",
+      "price": 3000
+    },
+    {
+      "id": "goreng",
+      "name": "Tahu Goreng",
+      "desc": "Tahu goreng siap santap",
+      "image": "",
+      "price": 4500
+    },
+    {
+      "id": "tempe",
+      "name": "Tempe",
+      "desc": "Tempe kedelai",
+      "image": "",
+      "price": 5000
+    }
+  ]
+}

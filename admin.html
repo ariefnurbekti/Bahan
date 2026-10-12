@@ -41,10 +41,11 @@
 
 <div class="grid">
 <section class="panel">
-<h2>Koneksi GitHub & Toko</h2><p class="sub">Konfigurasi akses repository GitHub.</p>
+<h2>Koneksi GitHub & Toko</h2><p class="sub">Masukkan PAT dengan izin Contents: Read and write untuk menyimpan katalog ke repository.</p>
 <div class="field"><label for="ghUser">Username GitHub</label><input id="ghUser" placeholder="namapengguna"></div>
 <div class="field"><label for="ghRepo">Nama Repository</label><input id="ghRepo" placeholder="tahu-tempe-store"></div>
-<div class="field"><label for="ghToken">GitHub Personal Access Token (PAT)</label><input id="ghToken" type="password" placeholder="ghp_xxxx"></div>
+<div class="field"><label for="ghToken">GitHub Personal Access Token (PAT)</label><input id="ghToken" type="password" placeholder="Diperlukan untuk menyimpan katalog"></div>
+<p class="hint">Token ini disimpan hanya di browser admin. Order otomatis dari pengunjung memerlukan token di konfigurasi index.html, yang akan terlihat oleh publik; tanpa token, checkout WhatsApp tetap berjalan tetapi order tidak tersimpan di GitHub.</p>
 <hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
 <div class="field"><label for="store">Nama Toko</label><input id="store" maxlength="60" placeholder="Segar Tahu & Tempe"></div>
 <div class="field"><label for="wa">Nomor WhatsApp</label><input id="wa" inputmode="tel" placeholder="6281234567890"></div>
@@ -77,7 +78,17 @@
 </div>
 <div class="toast" id="toast"></div>
 <script>
-let storeData={storeName:'Segar Tahu & Tempe',waNumber:'',banner:{active:true,title:'',desc:''},products:[]};
+let storeData={
+  storeName:'Segar Tahu & Tempe',
+  waNumber:'',
+  banner:{active:true,title:'🌟 PROMO SPESIAL: 100% Kedelai Murni Pilihan!',desc:'Higienis, Tanpa Bahan Pengawet, dan Fresh Setiap Hari.'},
+  products:[
+    {id:'besar',name:'Tahu Putih Besar',desc:'Tahu putih ukuran besar',image:'',price:7000},
+    {id:'kecil',name:'Tahu Putih Kecil',desc:'Tahu putih ukuran kecil',image:'',price:3000},
+    {id:'goreng',name:'Tahu Goreng',desc:'Tahu goreng siap santap',image:'',price:4500},
+    {id:'tempe',name:'Tempe',desc:'Tempe kedelai',image:'',price:5000}
+  ]
+};
 let ordersList=[];
 
 function toast(m){let e=document.getElementById('toast');e.textContent=m;e.style.display='block';clearTimeout(window.tt);window.tt=setTimeout(()=>e.style.display='none',3000)}
@@ -85,6 +96,8 @@ function toast(m){let e=document.getElementById('toast');e.textContent=m;e.style
 document.getElementById('ghUser').value=localStorage.getItem('gh_user')||'';
 document.getElementById('ghRepo').value=localStorage.getItem('gh_repo')||'';
 document.getElementById('ghToken').value=localStorage.getItem('gh_token')||'';
+document.getElementById('ghUser').value ||= 'ariefnurbekti';
+document.getElementById('ghRepo').value ||= 'Bahan';
 
 function renderCatalog(){
   document.getElementById('store').value=storeData.storeName;
@@ -111,7 +124,12 @@ function renderCatalog(){
   `).join('');
 }
 
-function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;}[c]))}
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+function decodeBase64Utf8(value){
+  const bytes=Uint8Array.from(atob(value.replace(/\s/g,'')),c=>c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
 
 function collectData(){
   storeData.storeName=document.getElementById('store').value.trim()||'Segar Tahu & Tempe';
@@ -150,10 +168,10 @@ async function loadCatalogFromGitHub(){
     let res=await fetch(`https://api.github.com/repos/${user}/${repo}/contents/katalog.json`,{headers});
     if(!res.ok) throw new Error('File katalog.json belum ada.');
     let json=await res.json();
-    storeData=JSON.parse(atob(json.content));
+    storeData=JSON.parse(decodeBase64Utf8(json.content));
     renderCatalog();
     toast('Katalog berhasil dimuat!');
-  }catch(e){toast('Info: '+e.message);}
+  }catch(e){toast('Gagal memuat katalog: '+e.message);}
 }
 
 async function loadOrdersFromGitHub(){
@@ -164,12 +182,12 @@ async function loadOrdersFromGitHub(){
   try{
     let headers={};if(token) headers['Authorization']='token '+token;
     let res=await fetch(`https://api.github.com/repos/${user}/${repo}/contents/orders.json`,{headers});
-    if(res.ok){
-      let json=await res.json();
-      ordersList=JSON.parse(atob(json.content));
-      renderOrdersTable();
-    }
-  }catch(e){ordersList=[];}
+    if(res.status===404){ordersList=[];renderOrdersTable();return}
+    if(!res.ok) throw new Error(`GitHub API (${res.status})`);
+    let json=await res.json();
+    ordersList=JSON.parse(decodeBase64Utf8(json.content));
+    renderOrdersTable();
+  }catch(e){toast('Gagal memuat pesanan: '+e.message);}
 }
 
 function renderOrdersTable(){
@@ -226,10 +244,11 @@ async function saveCatalogToGitHub(){
     let sha='';
     let getRes=await fetch(url,{headers});
     if(getRes.ok){let info=await getRes.json();sha=info.sha;}
+    else if(getRes.status!==404) throw new Error(`Tidak dapat membaca katalog (GitHub API ${getRes.status}).`);
     
     let body={message:'Update katalog',content:btoa(unescape(encodeURIComponent(JSON.stringify(storeData,null,2)))),sha:sha||undefined};
     let putRes=await fetch(url,{method:'PUT',headers,body:JSON.stringify(body)});
-    if(!putRes.ok) throw new Error('Gagal menyimpan.');
+    if(!putRes.ok) throw new Error(`Gagal menyimpan katalog (GitHub API ${putRes.status}).`);
     toast('Katalog berhasil disimpan ke GitHub!');
   }catch(e){toast('Error: '+e.message);}
 }
@@ -254,6 +273,8 @@ function removeProduct(id){
   toast('Produk dihapus.');
 }
 
+renderCatalog();
+renderOrdersTable();
 loadCatalogFromGitHub();
 </script>
 </body>

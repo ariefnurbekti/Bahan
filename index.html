@@ -58,10 +58,11 @@ footer{background:#103e2d;color:#d5e9dc;padding:24px 0;font-size:12px;margin-top
 <div class="toast" id="toast"></div>
 
 <script>
-// KONFIGURASI PUBLIK REPOSITORY GITHUB ANDA (Ganti dengan data Anda setelah di-upload ke GitHub)
-const GH_USER = "USERNAME_GITHUB_ANDA"; 
-const GH_REPO = "NAMA_REPOSITORY_ANDA";
-const GH_TOKEN = "TOKEN_PAT_ANDA"; // Opsional untuk pencatatan order otomatis ke orders.json
+// GitHub token is intentionally not included in this public file.
+// Without a backend, recording orders requires exposing a token to every site visitor.
+const GH_USER = "ariefnurbekti";
+const GH_REPO = "Bahan";
+const GH_TOKEN = "";
 
 let storeData={
   storeName:"Segar Tahu & Tempe",
@@ -79,11 +80,11 @@ let cart={};
 async function fetchCatalog(){
   try{
     let res = await fetch('katalog.json?_=' + Date.now());
-    if(res.ok){
-      let data = await res.json();
-      if(data && data.products) storeData = data;
-    }
-  }catch(e){}
+    if(!res.ok) throw new Error(`HTTP ${res.status}`);
+    let data = await res.json();
+    if(data && Array.isArray(data.products)) storeData = data;
+    else throw new Error('Format katalog.json tidak valid');
+  }catch(e){showToast('Katalog belum termuat: '+e.message);}
   render();
 }
 
@@ -128,7 +129,7 @@ function render(){
   updateOrder();
 }
 
-function escapeHTML(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;}[c]))}
+function escapeHTML(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function changeQty(id,delta){cart[id]=Math.max(0,(cart[id]||0)+delta);const el=document.getElementById('qty-'+id);if(el)el.textContent=cart[id];updateOrder()}
 function addProduct(id){changeQty(id,1);const p=storeData.products.find(x=>x.id===id);if(p)showToast(p.name+' ditambahkan')}
 function updateOrder(){
@@ -139,29 +140,39 @@ function updateOrder(){
   document.getElementById('summary').textContent=selected.length?selected.map(p=>`${p.name} × ${cart[p.id]}`).join(' • '):'Belum ada produk dipilih. Tekan tombol + untuk menambahkan.';
 }
 
+function decodeBase64Utf8(value){
+  const bytes=Uint8Array.from(atob(value.replace(/\s/g,'')),c=>c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
 async function recordOrderToGitHub(orderData) {
-  if (GH_USER === "USERNAME_GITHUB_ANDA" || !GH_TOKEN) return;
-  try {
-    let headers = {'Authorization': 'token ' + GH_TOKEN, 'Content-Type': 'application/json'};
-    let url = `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/orders.json`;
-    let sha = '';
-    let existingOrders = [];
-    
-    let getRes = await fetch(url, {headers});
-    if (getRes.ok) {
-      let info = await getRes.json();
-      sha = info.sha;
-      existingOrders = JSON.parse(atob(info.content));
-    }
-    existingOrders.push(orderData);
-    
-    let body = {
-      message: 'New customer order from ' + orderData.name,
-      content: btoa(unescape(encodeURIComponent(JSON.stringify(existingOrders, null, 2)))),
-      sha: sha || undefined
-    };
-    await fetch(url, {method: 'PUT', headers, body: JSON.stringify(body)});
-  } catch(e) {}
+  if (!GH_TOKEN) {
+    showToast('Pesanan WhatsApp siap dikirim. Catatan otomatis GitHub belum dikonfigurasi.');
+    return;
+  }
+  let headers = {'Authorization': 'token ' + GH_TOKEN, 'Content-Type': 'application/json'};
+  let url = `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/orders.json`;
+  let sha = '';
+  let existingOrders = [];
+
+  let getRes = await fetch(url, {headers});
+  if (getRes.ok) {
+    let info = await getRes.json();
+    sha = info.sha;
+    existingOrders = JSON.parse(decodeBase64Utf8(info.content));
+    if (!Array.isArray(existingOrders)) throw new Error('Format orders.json tidak valid');
+  } else if (getRes.status !== 404) {
+    throw new Error(`Tidak dapat membaca pesanan (GitHub API ${getRes.status})`);
+  }
+  existingOrders.push(orderData);
+
+  let body = {
+    message: 'New customer order from ' + orderData.name,
+    content: btoa(unescape(encodeURIComponent(JSON.stringify(existingOrders, null, 2)))),
+    sha: sha || undefined
+  };
+  let putRes = await fetch(url, {method: 'PUT', headers, body: JSON.stringify(body)});
+  if (!putRes.ok) throw new Error(`Gagal mencatat pesanan (GitHub API ${putRes.status})`);
 }
 
 function checkout(){
@@ -188,7 +199,7 @@ function checkout(){
     name, phone, address,
     items: itemsSummary,
     total: rupiah(total)
-  });
+  }).catch(e=>showToast('Pesanan tetap dapat dikirim lewat WhatsApp, tetapi gagal dicatat: '+e.message));
 
   const message=`Halo ${storeData.storeName}, saya ingin memesan:\n\n*DATA PEMESAN:*\nNama: ${name}\nNo. Telp: ${phone}\nAlamat Kirim: ${address}\n\n*DETAIL PESANAN:*\n${lines}\n\n*Total Sementara:* ${rupiah(total)}\n\nMohon konfirmasi ketersediaan dan total biaya kirimnya. Terima kasih!`;
   
