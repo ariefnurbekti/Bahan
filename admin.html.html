@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#176b45">
+<title>Admin Tahu & Tempe (Database & Excel)</title>
+<style>
+:root{--g:#176b45;--g2:#e8f4ec;--bg:#f5f7f4;--ink:#18332a;--muted:#69776f;--line:#e0e7e1;--red:#a72d2d}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}button,input,textarea{font:inherit}.layout{max-width:1150px;margin:auto;padding:24px 18px 48px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.brand{font-weight:900;font-size:20px}.brand small{display:block;font-weight:500;color:var(--muted);font-size:12px;margin-top:3px}.status{font-size:12px;border-radius:30px;padding:7px 11px;background:var(--g2);color:var(--g);font-weight:800}.intro{background:linear-gradient(120deg,#104d35,#23875a);color:white;border-radius:20px;padding:24px;margin-bottom:20px}.intro h1{margin:0 0 7px;font-size:clamp(24px,4vw,34px);letter-spacing:-.7px}.intro p{margin:0;color:#e0f0e4;max-width:720px;font-size:14px}.grid{display:grid;grid-template-columns:1fr 1.5fr;gap:18px}.panel{background:white;border:1px solid var(--line);border-radius:17px;padding:20px;box-shadow:0 5px 20px #163e2708}.panel h2{margin:0 0 5px;font-size:18px}.sub{font-size:12px;color:var(--muted);margin:0 0 17px}.field{display:flex;flex-direction:column;gap:6px;margin:13px 0}.field label{font-size:13px;font-weight:800}.field input,.field textarea{border:1px solid #cbd8ce;border-radius:10px;padding:11px 12px;width:100%;min-width:0;background:#fff;color:var(--ink)}.hint{font-size:11px;color:var(--muted);line-height:1.5}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:800;cursor:pointer}.primary{background:var(--g);color:white}.secondary{background:#edf3ee;color:var(--g)}.danger{background:#fff0f0;color:var(--red)}.full{width:100%;margin-top:9px}.products-head{display:flex;justify-content:space-between;align-items:start;gap:12px}.count{color:var(--muted);font-size:12px}.product-row{background:#fafbf9;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px;display:grid;gap:10px}.product-row-inputs{display:grid;grid-template-columns:1fr 1fr;gap:8px}.product-row-inputs input{border:1px solid #d3ddd5;border-radius:9px;padding:9px;width:100%}.product-row-bottom{display:grid;grid-template-columns:1fr 110px 40px;gap:8px;align-items:center}.empty{padding:24px 10px;color:var(--muted);text-align:center}
+.table-responsive{width:100%;overflow-x:auto;margin-top:12px}table.customer-table{width:100%;border-collapse:collapse;font-size:13px}table.customer-table th,table.customer-table td{border:1px solid var(--line);padding:10px;text-align:left}table.customer-table th{background:var(--g2);color:var(--g);font-weight:800}
+.toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#173c2a;color:white;border-radius:11px;padding:12px 16px;max-width:90%;box-shadow:0 8px 30px #0002;font-size:13px;z-index:5}
+@media(max-width:760px){.grid{grid-template-columns:1fr}.layout{padding:16px 12px 32px}.panel{padding:16px}.product-row-inputs{grid-template-columns:1fr}.product-row-bottom{grid-template-columns:1fr 90px 38px}}
+</style></head>
+<body>
+<div class="layout">
+<header class="top"><div class="brand">🌿 SEGAR TAHU & TEMPE<small>Admin Panel & Database Pelanggan</small></div><div class="status">ADMIN • LIVE SYNC</div></header>
+<section class="intro"><h1>Kelola Toko & Database Pelanggan</h1><p>Pantau riwayat pesanan yang masuk dari pelanggan, unduh data ke Excel, dan perbarui katalog produk secara real-time via GitHub.</p></section>
+
+<section class="panel" style="margin-bottom:18px">
+<div class="products-head">
+  <div><h2>Database & Histori Pesanan Pelanggan</h2><p class="sub">Data pesanan otomatis masuk dari website publik.</p></div>
+  <button class="btn primary" onclick="exportOrdersToExcel()">📥 Unduh ke Excel (CSV)</button>
+</div>
+<div class="table-responsive">
+  <table class="customer-table">
+    <thead>
+      <tr>
+        <th>Waktu</th>
+        <th>Nama Pelanggan</th>
+        <th>No. Telepon</th>
+        <th>Alamat Kirim</th>
+        <th>Detail Pesanan</th>
+        <th>Total</th>
+      </tr>
+    </thead>
+    <tbody id="ordersTableBody">
+      <tr><td colspan="6" class="empty">Memuat data pesanan...</td></tr>
+    </tbody>
+  </table>
+</div>
+<button class="btn secondary full" onclick="loadOrdersFromGitHub()" style="margin-top:12px">🔄 Perbarui Data Pesanan dari GitHub</button>
+</section>
+
+<div class="grid">
+<section class="panel">
+<h2>Koneksi GitHub & Toko</h2><p class="sub">Konfigurasi akses repository GitHub.</p>
+<div class="field"><label for="ghUser">Username GitHub</label><input id="ghUser" placeholder="namapengguna"></div>
+<div class="field"><label for="ghRepo">Nama Repository</label><input id="ghRepo" placeholder="tahu-tempe-store"></div>
+<div class="field"><label for="ghToken">GitHub Personal Access Token (PAT)</label><input id="ghToken" type="password" placeholder="ghp_xxxx"></div>
+<hr style="border:0;border-top:1px solid var(--line);margin:16px 0">
+<div class="field"><label for="store">Nama Toko</label><input id="store" maxlength="60" placeholder="Segar Tahu & Tempe"></div>
+<div class="field"><label for="wa">Nomor WhatsApp</label><input id="wa" inputmode="tel" placeholder="6281234567890"></div>
+<button class="btn primary full" onclick="loadCatalogFromGitHub()" style="margin-top:6px">Muat Katalog</button>
+<button class="btn secondary full" onclick="saveCatalogToGitHub()" style="background:#104d35;color:white;margin-top:6px">💾 Simpan Perubahan Katalog</button>
+</section>
+
+<div style="display:flex;flex-direction:column;gap:18px">
+<section class="panel">
+<h2>Banner Iklan & Kepercayaan</h2>
+<div class="field"><label for="bannerActive"><input type="checkbox" id="bannerActive" style="width:auto;margin-right:6px"> Aktifkan Banner Iklan</label></div>
+<div class="field"><label for="bannerTitle">Judul Banner / Promo</label><input id="bannerTitle" placeholder="Promo Spesial..."></div>
+<div class="field"><label for="bannerDesc">Keterangan / Kepercayaan</label><input id="bannerDesc" placeholder="100% Kedelai Murni..."></div>
+</section>
+
+<section class="panel">
+<div class="products-head"><div><h2>Daftar Produk & Foto</h2></div><div class="count" id="count">0 produk</div></div>
+<div id="list"></div>
+<div style="border-top:1px solid var(--line);padding-top:16px;margin-top:10px">
+<h2 style="font-size:15px">＋ Tambah Produk Baru</h2>
+<div class="field"><label>Nama produk</label><input id="newName" maxlength="60" placeholder="Contoh: Tahu Susu"></div>
+<div class="field"><label>Deskripsi singkat</label><input id="newDesc" maxlength="100" placeholder="Deskripsi"></div>
+<div class="field"><label>Harga (Rp)</label><input id="newPrice" type="number" min="0" step="500" placeholder="6000"></div>
+<div class="field"><label>Link Foto Produk (URL)</label><input id="newImage" placeholder="https://..."></div>
+<button class="btn primary full" onclick="addProduct()">Tambahkan Produk</button>
+</div>
+</section>
+</div>
+</div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+let storeData={storeName:'Segar Tahu & Tempe',waNumber:'',banner:{active:true,title:'',desc:''},products:[]};
+let ordersList=[];
+
+function toast(m){let e=document.getElementById('toast');e.textContent=m;e.style.display='block';clearTimeout(window.tt);window.tt=setTimeout(()=>e.style.display='none',3000)}
+
+document.getElementById('ghUser').value=localStorage.getItem('gh_user')||'';
+document.getElementById('ghRepo').value=localStorage.getItem('gh_repo')||'';
+document.getElementById('ghToken').value=localStorage.getItem('gh_token')||'';
+
+function renderCatalog(){
+  document.getElementById('store').value=storeData.storeName;
+  document.getElementById('wa').value=storeData.waNumber;
+  document.getElementById('bannerActive').checked=storeData.banner?.active||false;
+  document.getElementById('bannerTitle').value=storeData.banner?.title||'';
+  document.getElementById('bannerDesc').value=storeData.banner?.desc||'';
+  document.getElementById('count').textContent=(storeData.products||[]).length+' produk';
+  
+  let list=document.getElementById('list');
+  if(!storeData.products || !storeData.products.length){list.innerHTML='<div class="empty">Belum ada produk.</div>';return}
+  list.innerHTML=storeData.products.map(p=>`
+    <div class="product-row" data-id="${p.id}">
+      <div class="product-row-inputs">
+        <input class="pn" value="${esc(p.name)}" placeholder="Nama">
+        <input class="pd" value="${esc(p.desc)}" placeholder="Deskripsi">
+      </div>
+      <div class="product-row-bottom">
+        <input class="pi" value="${esc(p.image||'')}" placeholder="URL Foto">
+        <input class="pp" type="number" min="0" step="500" value="${p.price}" placeholder="Harga">
+        <button class="btn danger" onclick="removeProduct('${p.id}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;}[c]))}
+
+function collectData(){
+  storeData.storeName=document.getElementById('store').value.trim()||'Segar Tahu & Tempe';
+  storeData.waNumber=document.getElementById('wa').value.trim().replace(/[\s()+.-]/g,'');
+  storeData.banner={
+    active:document.getElementById('bannerActive').checked,
+    title:document.getElementById('bannerTitle').value.trim(),
+    desc:document.getElementById('bannerDesc').value.trim()
+  };
+  let rows=document.querySelectorAll('.product-row');
+  let newProds=[];
+  for(let row of rows){
+    let id=row.getAttribute('data-id');
+    let name=row.querySelector('.pn').value.trim();
+    let desc=row.querySelector('.pd').value.trim();
+    let image=row.querySelector('.pi').value.trim();
+    let price=Number(row.querySelector('.pp').value);
+    if(!name){toast('Nama produk tidak boleh kosong');return false;}
+    newProds.push({id,name,desc,image,price:Math.max(0,price)});
+  }
+  storeData.products=newProds;
+  return true;
+}
+
+async function loadCatalogFromGitHub(){
+  let user=document.getElementById('ghUser').value.trim();
+  let repo=document.getElementById('ghRepo').value.trim();
+  let token=document.getElementById('ghToken').value.trim();
+  if(!user||!repo){toast('Isi Username dan Repository GitHub.');return}
+  localStorage.setItem('gh_user',user);localStorage.setItem('gh_repo',repo);localStorage.setItem('gh_token',token);
+  
+  toast('Memuat data dari GitHub...');
+  await loadOrdersFromGitHub();
+  try{
+    let headers={};if(token) headers['Authorization']='token '+token;
+    let res=await fetch(`https://api.github.com/repos/${user}/${repo}/contents/katalog.json`,{headers});
+    if(!res.ok) throw new Error('File katalog.json belum ada.');
+    let json=await res.json();
+    storeData=JSON.parse(atob(json.content));
+    renderCatalog();
+    toast('Katalog berhasil dimuat!');
+  }catch(e){toast('Info: '+e.message);}
+}
+
+async function loadOrdersFromGitHub(){
+  let user=document.getElementById('ghUser').value.trim();
+  let repo=document.getElementById('ghRepo').value.trim();
+  let token=document.getElementById('ghToken').value.trim();
+  if(!user||!repo) return;
+  try{
+    let headers={};if(token) headers['Authorization']='token '+token;
+    let res=await fetch(`https://api.github.com/repos/${user}/${repo}/contents/orders.json`,{headers});
+    if(res.ok){
+      let json=await res.json();
+      ordersList=JSON.parse(atob(json.content));
+      renderOrdersTable();
+    }
+  }catch(e){ordersList=[];}
+}
+
+function renderOrdersTable(){
+  let tbody=document.getElementById('ordersTableBody');
+  if(!ordersList.length){tbody.innerHTML='<tr><td colspan="6" class="empty">Belum ada data pesanan masuk.</td></tr>';return;}
+  tbody.innerHTML=ordersList.slice().reverse().map(o=>`
+    <tr>
+      <td>${esc(o.date)}</td>
+      <td><strong>${esc(o.name)}</strong></td>
+      <td>${esc(o.phone)}</td>
+      <td>${esc(o.address)}</td>
+      <td><pre style="margin:0;font-family:inherit;white-space:pre-wrap">${esc(o.items)}</pre></td>
+      <td><strong>${esc(o.total)}</strong></td>
+    </tr>
+  `).join('');
+}
+
+function exportOrdersToExcel(){
+  if(!ordersList.length){toast('Belum ada data pesanan untuk diexpor.');return;}
+  let csvContent="data:text/csv;charset=utf-8,Waktu,Nama Pelanggan,No Telepon,Alamat Kirim,Detail Pesanan,Total\n";
+  ordersList.forEach(o=>{
+    let row=[
+      `"${o.date}"`,
+      `"${o.name.replace(/"/g,'""')}"`,
+      `"${o.phone}"`,
+      `"${o.address.replace(/"/g,'""')}"`,
+      `"${o.items.replace(/\n/g,' ').replace(/"/g,'""')}"`,
+      `"${o.total}"`
+    ];
+    csvContent+=row.join(",")+"\n";
+  });
+  let encodedUri=encodeURI(csvContent);
+  let link=document.createElement("a");
+  link.setAttribute("href",encodedUri);
+  link.setAttribute("download","database_pelanggan_tahu_tempe.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast('File Excel (CSV) berhasil diunduh.');
+}
+
+async function saveCatalogToGitHub(){
+  if(!collectData()) return;
+  let user=document.getElementById('ghUser').value.trim();
+  let repo=document.getElementById('ghRepo').value.trim();
+  let token=document.getElementById('ghToken').value.trim();
+  if(!user||!repo||!token){toast('GitHub Credentials lengkap wajib diisi!');return}
+  localStorage.setItem('gh_user',user);localStorage.setItem('gh_repo',repo);localStorage.setItem('gh_token',token);
+
+  toast('Menyimpan katalog ke GitHub...');
+  try{
+    let headers={'Authorization':'token '+token,'Content-Type':'application/json'};
+    let url=`https://api.github.com/repos/${user}/${repo}/contents/katalog.json`;
+    let sha='';
+    let getRes=await fetch(url,{headers});
+    if(getRes.ok){let info=await getRes.json();sha=info.sha;}
+    
+    let body={message:'Update katalog',content:btoa(unescape(encodeURIComponent(JSON.stringify(storeData,null,2)))),sha:sha||undefined};
+    let putRes=await fetch(url,{method:'PUT',headers,body:JSON.stringify(body)});
+    if(!putRes.ok) throw new Error('Gagal menyimpan.');
+    toast('Katalog berhasil disimpan ke GitHub!');
+  }catch(e){toast('Error: '+e.message);}
+}
+
+function addProduct(){
+  if(!collectData()) return;
+  let name=document.getElementById('newName').value.trim();
+  let desc=document.getElementById('newDesc').value.trim();
+  let price=Number(document.getElementById('newPrice').value);
+  let image=document.getElementById('newImage').value.trim();
+  if(!name){toast('Isi nama produk.');return}
+  storeData.products.push({id:'p_'+Math.random().toString(36).substr(2,6),name,desc,image,price:Math.max(0,price)});
+  document.getElementById('newName').value='';document.getElementById('newDesc').value='';document.getElementById('newPrice').value='';document.getElementById('newImage').value='';
+  renderCatalog();
+  toast('Produk ditambahkan. Klik Simpan Perubahan Katalog.');
+}
+
+function removeProduct(id){
+  if(!collectData()) return;
+  storeData.products=storeData.products.filter(p=>p.id!==id);
+  renderCatalog();
+  toast('Produk dihapus.');
+}
+
+loadCatalogFromGitHub();
+</script>
+</body>
+</html>
