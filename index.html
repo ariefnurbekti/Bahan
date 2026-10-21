@@ -428,9 +428,14 @@ function handleOrderSummaryAction(event){
   if(!button) return;
   const {cartAction:action,productId:id}=button.dataset;
   if(!Object.hasOwn(cart,id)||!storeData.products.some(product=>product.id===id)) return;
-  if(action==='increase') changeQty(id,1);
-  if(action==='decrease') changeQty(id,-1);
-  if(action==='remove') changeQty(id,-(cart[id]||0));
+  if(action==='increase') updateCartQuantity(id,1);
+  if(action==='decrease') updateCartQuantity(id,-1);
+  if(action==='remove') updateCartQuantity(id,-(cart[id]||0));
+}
+function updateCartQuantity(id,delta){
+  if(!Object.hasOwn(cart,id)) return;
+  cart[id]=Math.max(0,(cart[id]||0)+delta);
+  updateOrder();
 }
 
 function checkout(){
