@@ -125,6 +125,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 .confirm-actions button{min-height:46px;border:0;border-radius:11px;font:inherit;font-weight:800;cursor:pointer}
 .confirm-cancel{background:#eef3ef;color:var(--green)}
 .confirm-submit{background:linear-gradient(135deg,var(--green),#1b925a);color:#fff}
+.confirm-whatsapp{grid-column:1/-1;background:#1f9d55;color:#fff}
+.confirm-whatsapp:hover{background:#187b42}
 .confirm-submit:disabled{opacity:.6;cursor:wait}
 .checkout:disabled{opacity:.6;cursor:not-allowed}
 body.confirm-open{overflow:hidden}
@@ -149,10 +151,10 @@ body.confirm-open{overflow:hidden}
   <div class="hero-kpis">
     <div class="hero-kpi">✅ Segar setiap hari</div>
     <div class="hero-kpi">⚡ Pesan cepat</div>
-    <div class="hero-kpi">💬 Langsung WhatsApp</div>
+    <div class="hero-kpi">💳 Pembayaran Midtrans</div>
   </div>
   <h1 id="heroTitle">Tahu & tempe segar, tinggal pesan.</h1>
-  <p>Pilih produk favorit, atur jumlahnya, isi data diri, lalu kirim pesanan langsung ke WhatsApp.</p>
+  <p>Pilih produk favorit, isi data pengiriman, lalu selesaikan pembayaran dengan aman melalui Midtrans.</p>
   <div>
     <a class="cta" href="#produk">Lihat Pricelist <span>↓</span></a>
     <a class="cta secondary" href="#produk">Pesan sekarang</a>
@@ -174,7 +176,7 @@ body.confirm-open{overflow:hidden}
 <div class="feature-strip">
   <div class="feature-box"><strong>Segar tiap hari</strong><span>Bahan baku dipilih dan dikirim dengan kualitas terbaik untuk keluarga Anda.</span></div>
   <div class="feature-box"><strong>Rasa pas untuk semua menu</strong><span>Siap bikin masakan sederhana maupun sajian yang lebih istimewa.</span></div>
-  <div class="feature-box"><strong>Pesan tanpa ribet</strong><span>Isi data diri, pilih produk, lalu langsung kirim ke WhatsApp.</span></div>
+  <div class="feature-box"><strong>Pembayaran praktis</strong><span>Pilih produk, isi data pengiriman, lalu bayar dengan metode yang tersedia di Midtrans.</span></div>
 </div>
 <div class="section-head"><div><h2>Pricelist Produk</h2><p>Pilih jumlah produk yang ingin dipesan.</p></div><div class="tag">Harga dalam Rupiah</div></div>
 <div class="grid" id="products"></div>
@@ -218,8 +220,9 @@ body.confirm-open{overflow:hidden}
       <div class="summary-list" id="confirmItems"></div>
       <div class="confirm-total"><span>Total sementara</span><span id="confirmTotal">Rp0</span></div>
       <div class="confirm-actions">
+        <button class="confirm-whatsapp" id="confirmWhatsAppButton" type="button" onclick="sendOrderToWhatsApp()">Konfirmasi pesanan via WhatsApp</button>
         <button class="confirm-cancel" id="cancelOrderConfirm" type="button">Kembali</button>
-        <button class="confirm-submit" id="confirmOrderButton" type="submit">Konfirmasi &amp; lanjut ke WhatsApp</button>
+        <button class="confirm-submit" id="confirmOrderButton" type="submit">Langsung Bayar</button>
       </div>
     </div>
   </form>
@@ -228,7 +231,7 @@ body.confirm-open{overflow:hidden}
 <section class="faq" aria-labelledby="faqTitle">
   <div class="section-head"><div><h2 id="faqTitle">Pertanyaan yang sering ditanyakan</h2><p>Info singkat sebelum Anda memesan.</p></div></div>
   <div class="faq-list">
-    <details class="faq-item"><summary>Bagaimana cara memesan?</summary><p>Pilih produk dan jumlahnya, isi nama, nomor WhatsApp, serta alamat. Periksa kembali rincian pesanan, ubah jumlah atau hapus produk bila perlu, lalu konfirmasi untuk mencatat pesanan dan melanjutkan ke WhatsApp.</p></details>
+    <details class="faq-item"><summary>Bagaimana cara memesan?</summary><p>Pilih produk dan jumlahnya, isi nama, nomor WhatsApp, serta alamat. Setelah memeriksa rincian pesanan, pilih konfirmasi melalui WhatsApp atau langsung bayar dengan aman melalui Midtrans.</p></details>
     <details class="faq-item"><summary>Apakah harga sudah termasuk ongkos kirim?</summary><p>Total di halaman ini adalah subtotal produk. Ketersediaan, ongkos kirim, dan total akhir dapat dikonfirmasi langsung melalui WhatsApp.</p></details>
     <details class="faq-item"><summary>Bagaimana memastikan stok dan ukuran produk?</summary><p>Silakan tanyakan saat konfirmasi melalui WhatsApp. Satuan, ukuran, dan ketersediaan dapat berubah.</p></details>
   </div>
@@ -239,12 +242,13 @@ body.confirm-open{overflow:hidden}
 </section>
 </main>
 
-<footer><div class="wrap foot"><div><strong id="footerBrand">SEGAR TAHU & TEMPE</strong><br>Terima kasih telah berbelanja dengan kami.</div><div>Order WhatsApp • Harga dapat berubah sewaktu-waktu</div></div></footer>
+<footer><div class="wrap foot"><div><strong id="footerBrand">SEGAR TAHU & TEMPE</strong><br>Terima kasih telah berbelanja dengan kami.</div><div>Pembayaran Midtrans • Harga dapat berubah sewaktu-waktu</div></div></footer>
 <div class="toast" id="toast"></div>
 
 <script>
 const SUPABASE_URL = "https://gwoveetcyopsvnsciigv.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_FIpYtqbY054NL5C8zMm-Vw_yuFqyuM1";
+const PAYMENT_API_URL = "https://bahan-midtrans-api.rockheadache.workers.dev";
 
 let storeData={
   storeName:"Segar Tahu & Tempe",
@@ -409,28 +413,10 @@ function handleOrderSummaryAction(event){
   if(action==='remove') changeQty(id,-(cart[id]||0));
 }
 
-async function recordOrderToSupabase(orderData) {
-  const res=await fetch(`${SUPABASE_URL}/rest/v1/orders`,{
-    method:'POST',
-    headers:{
-      'apikey':SUPABASE_PUBLISHABLE_KEY,
-      'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY,
-      'Content-Type':'application/json',
-      'Prefer':'return=minimal'
-    },
-    body:JSON.stringify(orderData)
-  });
-  if(!res.ok){
-    const detail=(await res.text()).trim();
-    throw new Error(`Supabase menolak pesanan (HTTP ${res.status})${detail?`: ${detail}`:''}`);
-  }
-}
-
 function checkout(){
   const prods=storeData.products||[];
   const selected=prods.filter(p=>(cart[p.id]||0)>0);
   if(!selected.length){showToast('Pilih produk terlebih dahulu.');return}
-  if(!storeData.waNumber){showToast('Nomor WhatsApp toko belum dikonfigurasi.');return}
 
   const name=document.getElementById('custName').value.trim();
   const phone=document.getElementById('custPhone').value.trim();
@@ -447,54 +433,105 @@ function checkout(){
   document.getElementById('orderConfirmDialog').showModal();
   document.body.classList.add('confirm-open');
 }
+function sendOrderToWhatsApp(){
+  const phoneNumber=String(storeData.waNumber||'').replace(/\D/g,'');
+  if(!phoneNumber){showToast('Nomor WhatsApp toko belum dikonfigurasi.');return}
+
+  const products=storeData.products||[];
+  const selected=products.filter(product=>(cart[product.id]||0)>0);
+  const name=document.getElementById('custName').value.trim();
+  const phone=document.getElementById('custPhone').value.trim();
+  const address=document.getElementById('custAddress').value.trim();
+  if(!selected.length||!name||!phone||!address){
+    showToast('Lengkapi data pelanggan dan pilih produk sebelum menghubungi toko.');
+    return;
+  }
+
+  const lines=selected.map(product=>
+    `• ${product.name} x ${cart[product.id]} = ${rupiah(product.price*cart[product.id])}`
+  ).join('\n');
+  const total=selected.reduce((sum,product)=>sum+product.price*cart[product.id],0);
+  const message=`Halo ${storeData.storeName||'Toko'}, saya ingin konfirmasi pesanan:\n\n*DATA PEMESAN:*\nNama: ${name}\nNo. Telp: ${phone}\nAlamat Kirim: ${address}\n\n*DETAIL PESANAN:*\n${lines}\n\n*Total Sementara:* ${rupiah(total)}\n\nMohon konfirmasi ketersediaan, ongkos kirim, dan total akhir. Terima kasih!`;
+  const whatsappWindow=window.open(`https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`,'_blank');
+  if(whatsappWindow) whatsappWindow.opener=null;
+}
 async function submitConfirmedOrder(event){
   event.preventDefault();
   const prods=storeData.products||[];
   const selected=prods.filter(p=>(cart[p.id]||0)>0);
   if(!selected.length){showToast('Pilih setidaknya satu produk sebelum mengirim pesanan.');return}
-  if(!storeData.waNumber){showToast('Nomor WhatsApp toko belum dikonfigurasi.');return}
   const name=document.getElementById('custName').value.trim();
   const phone=document.getElementById('custPhone').value.trim();
   const address=document.getElementById('custAddress').value.trim();
   if(!name||!phone||!address){showToast('Data pelanggan belum lengkap. Kembali dan lengkapi formulir.');return}
 
-  const total=selected.reduce((s,p)=>s+p.price*cart[p.id],0);
-  const lines=selected.map(p=>`• ${p.name} x ${cart[p.id]} = ${rupiah(p.price*cart[p.id])}`).join('\n');
-
-  const message=`Halo ${storeData.storeName}, saya ingin memesan:\n\n*DATA PEMESAN:*\nNama: ${name}\nNo. Telp: ${phone}\nAlamat Kirim: ${address}\n\n*DETAIL PESANAN:*\n${lines}\n\n*Total Sementara:* ${rupiah(total)}\n\nMohon konfirmasi ketersediaan, stok, serta estimasi biaya kirimnya. Terima kasih!`;
-  const whatsappUrl='https://wa.me/'+storeData.waNumber+'?text='+encodeURIComponent(message);
   const checkoutButton=document.getElementById('confirmOrderButton');
-  const whatsappWindow=window.open('about:blank','_blank');
   checkoutButton.disabled=true;
-  checkoutButton.textContent='Mencatat pesanan...';
+  checkoutButton.textContent='Menyiapkan pembayaran...';
 
   try{
-    await recordOrderToSupabase({
-      name,phone,address,
-      items:selected.map(p=>({
-        product_id:p.id,
-        name:p.name,
-        quantity:cart[p.id],
-        unit_price:p.price,
-        subtotal:p.price*cart[p.id]
-      })),
-      total_amount:total
+    if(!PAYMENT_API_URL){
+      throw new Error('URL Worker pembayaran belum dikonfigurasi. Atur PAYMENT_API_URL di index.html setelah Worker dipublikasikan.');
+    }
+    const response=await fetch(`${PAYMENT_API_URL.replace(/\/+$/,'')}/api/checkout`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        customer:{name,phone,address},
+        items:selected.map(product=>({product_id:product.id,quantity:cart[product.id]}))
+      })
     });
+    const result=await response.json().catch(()=>({}));
+    if(!response.ok) throw new Error(result.error||`Checkout gagal (HTTP ${response.status}).`);
+    const redirectUrl=new URL(result.redirect_url);
+    if(redirectUrl.protocol!=='https:'||!['app.midtrans.com','app.sandbox.midtrans.com'].includes(redirectUrl.hostname)){
+      throw new Error('Midtrans memberikan alamat pembayaran yang tidak valid.');
+    }
     for(const product of selected) cart[product.id]=0;
     updateOrder();
     document.getElementById('orderConfirmDialog').close();
-    showToast('Pesanan berhasil dicatat. Membuka WhatsApp...');
-    if(whatsappWindow){
-      whatsappWindow.opener=null;
-      whatsappWindow.location.replace(whatsappUrl);
-    }
-    else window.location.assign(whatsappUrl);
+    window.location.assign(redirectUrl.href);
   }catch(e){
-    if(whatsappWindow) whatsappWindow.close();
-    showToast('Pesanan belum tercatat. Coba lagi atau hubungi toko: '+e.message);
+    showToast('Pembayaran belum dapat dibuat: '+e.message);
   }finally{
     checkoutButton.disabled=false;
-    checkoutButton.textContent='Konfirmasi & lanjut ke WhatsApp';
+    checkoutButton.textContent='Langsung Bayar';
+  }
+}
+async function showPaymentReturnStatus(){
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('payment')!=='finish') return;
+  const orderId=params.get('order_id')||'';
+  if(!PAYMENT_API_URL||!orderId){
+    showToast('Pembayaran selesai. Status pesanan akan diperbarui setelah notifikasi Midtrans diterima.');
+    return;
+  }
+  try{
+    let result;
+    for(let attempt=0;attempt<4;attempt++){
+      const response=await fetch(`${PAYMENT_API_URL.replace(/\/+$/,'')}/api/payment-status?order_id=${encodeURIComponent(orderId)}`,{cache:'no-store'});
+      result=await response.json();
+      if(!response.ok) throw new Error(result.error||`HTTP ${response.status}`);
+      if(result.payment_status!=='pending'||attempt===3) break;
+      await new Promise(resolve=>setTimeout(resolve,1200));
+    }
+    const messages={
+      paid:'Pembayaran berhasil diterima. Terima kasih!',
+      pending:'Pembayaran sedang diproses. Muat ulang halaman ini untuk memeriksa status kembali.',
+      failed:'Pembayaran gagal. Silakan buat pesanan baru atau hubungi toko.',
+      expired:'Batas waktu pembayaran telah berakhir.',
+      cancelled:'Pembayaran dibatalkan.',
+      refunded:'Pembayaran telah dikembalikan.'
+    };
+    showToast(messages[result.payment_status]||'Pembayaran selesai. Status pesanan: '+result.payment_status);
+    if(result.payment_status!=='pending'){
+      const cleanUrl=new URL(window.location.href);
+      cleanUrl.searchParams.delete('payment');
+      cleanUrl.searchParams.delete('order_id');
+      window.history.replaceState({},'',cleanUrl.pathname+cleanUrl.search+cleanUrl.hash);
+    }
+  }catch(error){
+    showToast('Pembayaran selesai, tetapi status pesanan belum dapat dimuat. '+error.message);
   }
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.style.display='none',3000)}
@@ -505,6 +542,7 @@ document.getElementById('orderConfirmForm').addEventListener('submit',submitConf
 document.getElementById('cancelOrderConfirm').addEventListener('click',()=>document.getElementById('orderConfirmDialog').close());
 document.getElementById('orderConfirmDialog').addEventListener('close',()=>document.body.classList.remove('confirm-open'));
 fetchCatalog();
+showPaymentReturnStatus();
 </script>
 </body>
 </html>

@@ -90,6 +90,10 @@ tbody tr:hover{background:#fbfdfb}
 .order-line{display:flex;justify-content:space-between;gap:12px;padding:2px 0;color:#42534a}
 .order-line span:last-child{white-space:nowrap;color:var(--muted)}
 .amount{font-weight:850;white-space:nowrap;color:var(--green)}
+.payment-status{display:inline-block;padding:5px 8px;border-radius:999px;background:#eef3ef;color:#526259;font-size:10px;font-weight:800;white-space:nowrap}
+.payment-status-paid{background:#e7f5eb;color:#176b45}
+.payment-status-pending{background:#fff6df;color:#805b08}
+.payment-status-failed,.payment-status-expired,.payment-status-cancelled{background:#fff0ef;color:#922a24}
 .address{max-width:220px;min-width:150px;white-space:pre-wrap;overflow-wrap:anywhere;color:#526259}
 .product-order-cell{min-width:110px;text-align:center}
 .product-order-cell strong{display:block;white-space:nowrap}
@@ -226,8 +230,8 @@ on conflict (email) do nothing;</code>
         </div>
         <div class="table-responsive">
           <table>
-            <thead><tr id="ordersTableHead"><th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th><th>Total</th><th>Aksi</th></tr></thead>
-            <tbody id="ordersTableBody"><tr><td colspan="5" class="empty">Masuk untuk memuat laporan pesanan.</td></tr></tbody>
+            <thead><tr id="ordersTableHead"><th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th><th>Pembayaran</th><th>Total</th><th>Aksi</th></tr></thead>
+            <tbody id="ordersTableBody"><tr><td colspan="6" class="empty">Masuk untuk memuat laporan pesanan.</td></tr></tbody>
           </table>
         </div>
         <div class="table-foot"><span id="tableFootNote">Data pesanan dilindungi akses admin. <span id="realtimeStatus" aria-live="polite">Menghubungkan ke sinkronisasi langsung...</span></span><span id="lastUpdated"></span></div>
@@ -419,15 +423,29 @@ function orderItemsByName(order){
   }
   return items;
 }
+function paymentStatusLabel(status){
+  const labels={
+    manual:{label:'WhatsApp',className:''},
+    pending:{label:'Menunggu pembayaran',className:'pending'},
+    paid:{label:'Lunas',className:'paid'},
+    failed:{label:'Gagal',className:'failed'},
+    cancelled:{label:'Dibatalkan',className:'cancelled'},
+    expired:{label:'Kedaluwarsa',className:'expired'},
+    refunded:{label:'Dikembalikan',className:''},
+    partially_refunded:{label:'Refund sebagian',className:''},
+    disputed:{label:'Sengketa',className:'failed'}
+  };
+  return Object.hasOwn(labels,status)?labels[status]:{label:'Tidak diketahui',className:''};
+}
 function ordersTableColumnCount(){
-  return 5+orderProductNames().length;
+  return 6+orderProductNames().length;
 }
 function setOrdersTableHeader(productNames){
   const head=document.getElementById('ordersTableHead');
   head.innerHTML='<th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th>'+
     productNames.map(name=>`<th class="product-order-header">${escapeHTML(name)}</th>`).join('')+
-    '<th>Total</th><th>Aksi</th>';
-  const width=Math.max(950,760+productNames.length*125);
+    '<th>Pembayaran</th><th>Total</th><th>Aksi</th>';
+  const width=Math.max(1050,850+productNames.length*125);
   document.querySelector('.table-responsive table').style.minWidth=`${width}px`;
 }
 async function loadOrders(silent=false){
@@ -449,7 +467,7 @@ async function loadOrders(silent=false){
   try{
     const allOrders=[];
     for(let offset=0;;offset+=PAGE_SIZE){
-      const response=await supabaseFetch('/rest/v1/orders?select=id,created_at,name,phone,address,items,total_amount&order=created_at.desc',{
+      const response=await supabaseFetch('/rest/v1/orders?select=id,created_at,name,phone,address,items,total_amount,payment_status,transaction_status&order=created_at.desc',{
         headers:{'Range-Unit':'items','Range':`${offset}-${offset+PAGE_SIZE-1}`},
         cache:'no-store'
       });
@@ -730,7 +748,7 @@ function renderOrdersTable(){
   setOrdersTableHeader(productNames);
   document.getElementById('orderCount').textContent=`Menampilkan ${filtered.length} dari ${ordersList.length} pesanan`;
   if(!filtered.length){
-    target.innerHTML=`<tr><td colspan="${5+productNames.length}" class="empty">${ordersList.length?'Tidak ada pesanan yang cocok dengan filter.':'Belum ada pesanan masuk.'}</td></tr>`;
+    target.innerHTML=`<tr><td colspan="${6+productNames.length}" class="empty">${ordersList.length?'Tidak ada pesanan yang cocok dengan filter.':'Belum ada pesanan masuk.'}</td></tr>`;
     return;
   }
   target.innerHTML=filtered.map(order=>{
@@ -741,11 +759,13 @@ function renderOrdersTable(){
         ?`<td class="product-order-cell"><strong>${item.quantity} unit</strong><span>${money(item.subtotal)}</span></td>`
         :'<td class="product-order-cell">—</td>';
     }).join('');
+    const payment=paymentStatusLabel(order.payment_status);
     return `<tr>
       <td>${escapeHTML(dateLabel(order.created_at,{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}))}</td>
       <td><span class="customer">${escapeHTML(order.name)}</span><span class="customer-contact">${escapeHTML(order.phone)}</span></td>
       <td><div class="address">${escapeHTML(order.address)}</div></td>
       ${productCells}
+      <td><span class="payment-status payment-status-${payment.className}">${escapeHTML(payment.label)}</span></td>
       <td><span class="amount">${money(order.total_amount)}</span></td>
       <td><div class="order-actions">
         <button class="btn btn-secondary" type="button" data-order-action="edit" data-order-id="${escapeHTML(order.id)}" aria-label="Edit pesanan ${escapeHTML(order.name)}">Edit</button>
@@ -1271,7 +1291,7 @@ function exportOrdersToCSV(){
     return;
   }
   const productNames=orderProductNames();
-  const rows=[['Waktu','Nama Pelanggan','No. Telepon','Alamat Kirim',...productNames.map(name=>`${name} (jumlah; subtotal)`),'Total']];
+  const rows=[['Waktu','Nama Pelanggan','No. Telepon','Alamat Kirim',...productNames.map(name=>`${name} (jumlah; subtotal)`),'Status Pembayaran','Total']];
   for(const order of selected){
     const items=orderItemsByName(order);
     rows.push([
@@ -1281,6 +1301,7 @@ function exportOrdersToCSV(){
         const item=items.get(name);
         return item?`${item.quantity} unit; ${item.subtotal}`:'';
       }),
+      paymentStatusLabel(order.payment_status).label,
       order.total_amount
     ]);
   }
@@ -1350,7 +1371,7 @@ async function logout(){
   catalogDraft=null;
   catalogLoaded=false;
   setSignedIn(false);
-  document.getElementById('ordersTableBody').innerHTML='<tr><td colspan="5" class="empty">Masuk untuk memuat laporan pesanan.</td></tr>';
+  document.getElementById('ordersTableBody').innerHTML='<tr><td colspan="6" class="empty">Masuk untuk memuat laporan pesanan.</td></tr>';
   document.getElementById('orderCount').textContent='Masuk untuk melihat riwayat pesanan';
   if(current?.access_token){
     try{
