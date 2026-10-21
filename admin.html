@@ -226,7 +226,7 @@ on conflict (email) do nothing;</code>
             <tbody id="ordersTableBody"><tr><td colspan="6" class="empty">Masuk untuk memuat laporan pesanan.</td></tr></tbody>
           </table>
         </div>
-        <div class="table-foot"><span id="tableFootNote">Data pesanan dilindungi akses admin.</span><span id="lastUpdated"></span></div>
+        <div class="table-foot"><span id="tableFootNote">Data pesanan dilindungi akses admin. <span id="realtimeStatus" aria-live="polite">Menghubungkan ke sinkronisasi langsung...</span></span><span id="lastUpdated"></span></div>
       </section>
       <div class="notice" id="dashboardNotice" role="status" aria-live="polite"></div>
       </div>
@@ -295,6 +295,17 @@ let catalogDraft=null;
 let catalogLoaded=false;
 let editingOrderId=null;
 let orderEditItemSequence=0;
+let realtimeSocket=null;
+let realtimeReconnectTimer=null;
+let realtimeHeartbeatTimer=null;
+let realtimeFallbackTimer=null;
+let ordersReloadTimer=null;
+let realtimeReconnectDelay=1000;
+let realtimeRef=0;
+let realtimeJoinRef=null;
+let realtimeConnected=false;
+let ordersLoadInProgress=false;
+let ordersReloadQueued=false;
 localStorage.removeItem('gh_token');
 
 function escapeHTML(value){
@@ -322,6 +333,7 @@ function setSignedIn(signedIn,email=''){
   const status=document.getElementById('connectionStatus');
   status.classList.toggle('online',signedIn);
   document.getElementById('statusText').textContent=signedIn?(email||'Terhubung'):'Belum masuk';
+  if(!signedIn) stopRealtimeOrders();
   if(!signedIn){
     document.getElementById('ordersTab').setAttribute('aria-selected','true');
     document.getElementById('catalogTab').setAttribute('aria-selected','false');
@@ -386,6 +398,11 @@ function formatItems(items){
   }));
 }
 async function loadOrders(){
+  if(ordersLoadInProgress){
+    ordersReloadQueued=true;
+    return;
+  }
+  ordersLoadInProgress=true;
   const body=document.getElementById('ordersTableBody');
   body.innerHTML='<tr><td colspan="6" class="empty">Memuat laporan dari Supabase...</td></tr>';
   hideNotice(document.getElementById('dashboardNotice'));
@@ -420,7 +437,173 @@ async function loadOrders(){
     body.innerHTML=`<tr><td colspan="6" class="empty">${escapeHTML(error.message)}</td></tr>`;
     document.getElementById('orderCount').textContent='Laporan tidak tersedia';
     showNotice(document.getElementById('dashboardNotice'),error.message);
+  }finally{
+    ordersLoadInProgress=false;
+    if(ordersReloadQueued){
+      ordersReloadQueued=false;
+      loadOrders();
+    }
   }
+}
+function setRealtimeStatus(message){
+  document.getElementById('realtimeStatus').textContent=message;
+}
+function clearRealtimeTimers(){
+  clearTimeout(realtimeReconnectTimer);
+  clearInterval(realtimeHeartbeatTimer);
+  clearInterval(realtimeFallbackTimer);
+  clearTimeout(ordersReloadTimer);
+  realtimeReconnectTimer=null;
+  realtimeHeartbeatTimer=null;
+  realtimeFallbackTimer=null;
+  ordersReloadTimer=null;
+}
+function stopRealtimeOrders(){
+  clearRealtimeTimers();
+  realtimeConnected=false;
+  realtimeJoinRef=null;
+  const socket=realtimeSocket;
+  realtimeSocket=null;
+  if(socket&&socket.readyState<WebSocket.CLOSING) socket.close(1000,'Signed out');
+  setRealtimeStatus('Sinkronisasi langsung tidak aktif.');
+}
+function queueRealtimeOrdersReload(){
+  clearTimeout(ordersReloadTimer);
+  ordersReloadTimer=setTimeout(()=>loadOrders(),350);
+}
+function scheduleRealtimeReconnect(){
+  if(!authSession||realtimeReconnectTimer) return;
+  realtimeConnected=false;
+  setRealtimeStatus('Menyambungkan kembali; pembaruan otomatis tetap berjalan.');
+  const delay=realtimeReconnectDelay;
+  realtimeReconnectDelay=Math.min(realtimeReconnectDelay*2,30000);
+  realtimeReconnectTimer=setTimeout(()=>{
+    realtimeReconnectTimer=null;
+    startRealtimeOrders();
+  },delay);
+}
+function sendRealtimeMessage(topic,event,payload){
+  if(!realtimeSocket||realtimeSocket.readyState!==WebSocket.OPEN) return false;
+  realtimeSocket.send(JSON.stringify({
+    topic,
+    event,
+    payload,
+    ref:String(++realtimeRef),
+    join_ref:realtimeJoinRef
+  }));
+  return true;
+}
+function decodeRealtimeMessage(raw){
+  try{
+    const message=JSON.parse(raw);
+    if(Array.isArray(message)){
+      return {joinRef:message[0],ref:message[1],topic:message[2],event:message[3],payload:message[4]};
+    }
+    return message;
+  }catch(error){
+    return null;
+  }
+}
+async function startRealtimeOrders(){
+  if(!authSession) return;
+  if(realtimeReconnectTimer){
+    clearTimeout(realtimeReconnectTimer);
+    realtimeReconnectTimer=null;
+  }
+  const previousSocket=realtimeSocket;
+  realtimeSocket=null;
+  if(previousSocket&&previousSocket.readyState<WebSocket.CLOSING) previousSocket.close(1000,'Replacing subscription');
+  clearInterval(realtimeHeartbeatTimer);
+  clearInterval(realtimeFallbackTimer);
+  realtimeConnected=false;
+  try{
+    const session=await getValidSession();
+    const url=new URL(`${SUPABASE_URL.replace(/^http/,'ws')}/realtime/v1/websocket`);
+    url.searchParams.set('apikey',SUPABASE_PUBLISHABLE_KEY);
+    url.searchParams.set('vsn','1.0.0');
+    const socket=new WebSocket(url);
+    realtimeSocket=socket;
+    setRealtimeStatus('Menghubungkan ke sinkronisasi langsung...');
+    realtimeFallbackTimer=setInterval(()=>{
+      if(!realtimeConnected&&document.visibilityState!=='hidden') loadOrders();
+    },15000);
+    socket.addEventListener('open',()=>{
+      if(realtimeSocket!==socket) return;
+      realtimeReconnectDelay=1000;
+      realtimeJoinRef=String(++realtimeRef);
+      socket.send(JSON.stringify({
+        topic:'realtime:public:orders',
+        event:'phx_join',
+        payload:{
+          config:{
+            broadcast:{ack:false,self:false},
+            presence:{key:''},
+            postgres_changes:[{event:'*',schema:'public',table:'orders'}]
+          },
+          access_token:session.access_token,
+          version:'1.0.0'
+        },
+        ref:realtimeJoinRef,
+        join_ref:realtimeJoinRef
+      }));
+      realtimeHeartbeatTimer=setInterval(async()=>{
+        if(realtimeSocket!==socket||socket.readyState!==WebSocket.OPEN) return;
+        try{
+          const validSession=await getValidSession();
+          if(authSession&&realtimeSocket===socket){
+            sendRealtimeMessage('realtime:public:orders','access_token',{access_token:validSession.access_token});
+          }
+        }catch(error){
+          setRealtimeStatus(`Sesi real-time perlu diperbarui: ${error.message}`);
+          socket.close();
+        }
+        if(socket.readyState===WebSocket.OPEN){
+          socket.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++realtimeRef)}));
+        }
+      },25000);
+    });
+    socket.addEventListener('message',event=>{
+      if(realtimeSocket!==socket) return;
+      const message=decodeRealtimeMessage(event.data);
+      if(!message) return;
+      if(message.event==='phx_reply'&&message.ref===realtimeJoinRef){
+        if(message.payload?.status==='ok'){
+          realtimeConnected=true;
+          realtimeReconnectDelay=1000;
+          setRealtimeStatus('Sinkronisasi langsung aktif.');
+        }else{
+          setRealtimeStatus('Langganan langsung ditolak; pembaruan otomatis tetap berjalan.');
+          socket.close();
+        }
+        return;
+      }
+      if(message.event==='postgres_changes'){
+        queueRealtimeOrdersReload();
+      }
+    });
+    socket.addEventListener('close',()=>{
+      if(realtimeSocket!==socket) return;
+      realtimeSocket=null;
+      clearInterval(realtimeHeartbeatTimer);
+      realtimeHeartbeatTimer=null;
+      realtimeConnected=false;
+      scheduleRealtimeReconnect();
+    });
+    socket.addEventListener('error',()=>{
+      if(realtimeSocket===socket) setRealtimeStatus('Koneksi langsung terganggu; pembaruan otomatis tetap berjalan.');
+    });
+  }catch(error){
+    realtimeSocket=null;
+    setRealtimeStatus(`Koneksi langsung gagal; pembaruan otomatis tetap berjalan. ${error.message}`);
+    startRealtimeFallback();
+    scheduleRealtimeReconnect();
+  }
+}
+function startRealtimeFallback(){
+  clearInterval(realtimeFallbackTimer);
+  realtimeFallbackTimer=setInterval(()=>{
+    if(document.visibilityState!=='hidden') loadOrders();
+  },15000);
 }
 function renderReports(){
   const now=new Date();
@@ -1063,7 +1246,7 @@ async function signIn(event){
     const session=await authRequest('token?grant_type=password',{email,password});
     persistSession(session);
     setSignedIn(true,session.user?.email||email);
-    await Promise.all([loadOrders(),loadCatalogSettings()]);
+    await Promise.all([loadOrders(),loadCatalogSettings(),startRealtimeOrders()]);
   }catch(error){
     showNotice(notice,error.message);
   }finally{
@@ -1088,7 +1271,7 @@ async function signUp(){
     if(result.access_token){
       persistSession(result);
       setSignedIn(true,result.user?.email||email);
-      await Promise.all([loadOrders(),loadCatalogSettings()]);
+      await Promise.all([loadOrders(),loadCatalogSettings(),startRealtimeOrders()]);
       return;
     }
     showNotice(notice,'Akun berhasil dibuat. Periksa email untuk verifikasi, lalu tambahkan email tersebut ke public.admin_access melalui SQL Editor sebelum masuk.','success');
@@ -1179,7 +1362,7 @@ if(authSession){
   const sessionEmail=authSession.user?.email||'';
   setSignedIn(true);
   document.getElementById('statusText').textContent=sessionEmail||'Terhubung';
-  Promise.all([loadOrders(),loadCatalogSettings()]);
+  Promise.all([loadOrders(),loadCatalogSettings(),startRealtimeOrders()]);
 }else{
   setSignedIn(false);
 }
