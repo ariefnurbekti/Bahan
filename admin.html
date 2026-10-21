@@ -94,6 +94,27 @@ tbody tr:hover{background:#fbfdfb}
 .empty{padding:34px 16px;text-align:center;color:var(--muted)}
 .table-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 19px;color:var(--muted);font-size:11px}
 .toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:5;background:#173c2a;color:#fff;border-radius:11px;padding:12px 16px;max-width:calc(100% - 28px);box-shadow:0 8px 30px #0002;font-size:13px;text-align:center}
+.order-actions{display:flex;gap:6px;white-space:nowrap}
+.order-actions .btn{padding:7px 9px;font-size:11px}
+.btn-danger{background:#fff0ef;color:var(--red)}
+.btn-danger:hover{background:#ffe3e1}
+.order-dialog{width:min(680px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;border:1px solid var(--line);border-radius:18px;padding:0;color:var(--ink);box-shadow:0 24px 80px #0003}
+.order-dialog::backdrop{background:#10251dcc;backdrop-filter:blur(3px)}
+.order-dialog-head{position:sticky;top:0;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:20px 22px;background:#fff;border-bottom:1px solid var(--line)}
+.order-dialog-head h2{margin:0;font-size:19px}
+.order-dialog-head p{margin:3px 0 0;color:var(--muted);font-size:12px}
+.order-dialog-body{padding:8px 22px 20px}
+.order-dialog textarea{width:100%;min-height:78px;padding:11px 12px;border:1px solid #cbd8ce;border-radius:10px;resize:vertical;color:var(--ink)}
+.edit-items{display:grid;gap:9px;margin:9px 0 14px}
+.edit-item{display:grid;grid-template-columns:minmax(130px,1.5fr) minmax(75px,.6fr) minmax(110px,.9fr) auto;gap:8px;align-items:end;padding:11px;border:1px solid var(--line);border-radius:11px;background:#fafcf9}
+.edit-item label{display:block;margin-bottom:4px;color:var(--muted);font-size:10px;font-weight:800}
+.edit-item input{width:100%;min-width:0;height:39px;padding:8px;border:1px solid #cbd8ce;border-radius:8px;background:#fff;color:var(--ink)}
+.edit-item-subtotal{margin-top:5px;color:var(--muted);font-size:10px}
+.edit-total{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-top:1px solid var(--line);font-weight:800}
+.order-dialog-actions{display:flex;justify-content:flex-end;gap:9px;padding-top:14px;border-top:1px solid var(--line)}
+.order-dialog-notice{margin:0 0 12px}
+body.dialog-open{overflow:hidden}
+@media(max-width:600px){.order-dialog-head{padding:17px}.order-dialog-body{padding:7px 17px 17px}.edit-item{grid-template-columns:1fr 1fr}.edit-item-name{grid-column:1/-1}.edit-item .btn{width:100%}.order-dialog-actions{flex-direction:column-reverse}.order-dialog-actions .btn{width:100%}.order-actions{flex-direction:column}}
 @media(max-width:850px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.report-grid{grid-template-columns:1fr}}
 @media(max-width:600px){.layout{padding:16px 12px max(28px,env(safe-area-inset-bottom))}.topbar{align-items:flex-start;margin-bottom:16px}.brand{font-size:15px}.brand-mark{width:38px;height:38px}.status{font-size:10px;padding:7px 9px}.top-actions{gap:6px}.top-actions .btn{padding:9px 10px;font-size:12px}.intro{padding:19px;border-radius:17px;margin-bottom:14px}.intro h1{font-size:25px}.intro p{font-size:13px}.login-wrap{margin:28px auto}.panel{padding:17px}.form-actions{grid-template-columns:1fr}.metric{padding:14px}.metric-value{font-size:22px}.report-card{padding:15px}.bars{gap:5px;height:175px}.bar-track{height:112px;width:min(100%,27px)}.bar-value,.bar-label{font-size:9px}.table-head{padding:16px 14px 12px}.table-tools{padding:0 14px 12px}.table-foot{padding:11px 14px}.date-filter{flex:1 1 145px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition-duration:.01ms!important}}
@@ -201,8 +222,8 @@ on conflict (email) do nothing;</code>
         </div>
         <div class="table-responsive">
           <table>
-            <thead><tr><th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th><th>Detail pesanan</th><th>Total</th></tr></thead>
-            <tbody id="ordersTableBody"><tr><td colspan="5" class="empty">Masuk untuk memuat laporan pesanan.</td></tr></tbody>
+            <thead><tr><th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th><th>Detail pesanan</th><th>Total</th><th>Aksi</th></tr></thead>
+            <tbody id="ordersTableBody"><tr><td colspan="6" class="empty">Masuk untuk memuat laporan pesanan.</td></tr></tbody>
           </table>
         </div>
         <div class="table-foot"><span id="tableFootNote">Data pesanan dilindungi akses admin.</span><span id="lastUpdated"></span></div>
@@ -242,6 +263,27 @@ on conflict (email) do nothing;</code>
   </main>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog class="order-dialog" id="orderEditDialog" aria-labelledby="orderEditTitle">
+  <form id="orderEditForm">
+    <div class="order-dialog-head">
+      <div><h2 id="orderEditTitle">Edit pesanan</h2><p id="orderEditCreatedAt"></p></div>
+      <button class="btn btn-quiet" id="closeOrderDialog" type="button" aria-label="Tutup">✕</button>
+    </div>
+    <div class="order-dialog-body">
+      <div class="notice order-dialog-notice" id="orderEditNotice" role="status" aria-live="polite"></div>
+      <div class="field"><label for="editOrderName">Nama pelanggan</label><input id="editOrderName" maxlength="120" required></div>
+      <div class="field"><label for="editOrderPhone">Nomor telepon</label><input id="editOrderPhone" maxlength="40" required></div>
+      <div class="field"><label for="editOrderAddress">Alamat pengiriman</label><textarea id="editOrderAddress" maxlength="1000" required></textarea></div>
+      <div class="settings-head"><div><h3>Item pesanan</h3><p>Ubah nama, jumlah, dan harga satuan. Total dihitung otomatis.</p></div><button class="btn btn-secondary" id="addOrderItem" type="button">＋ Tambah item</button></div>
+      <div class="edit-items" id="editOrderItems"></div>
+      <div class="edit-total"><span>Total pesanan</span><output id="editOrderTotal">Rp0</output></div>
+      <div class="order-dialog-actions">
+        <button class="btn btn-secondary" id="cancelOrderEdit" type="button">Batal</button>
+        <button class="btn btn-primary" id="saveOrderEdit" type="submit">Simpan perubahan</button>
+      </div>
+    </div>
+  </form>
+</dialog>
 <script>
 const SUPABASE_URL='https://gwoveetcyopsvnsciigv.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY='sb_publishable_FIpYtqbY054NL5C8zMm-Vw_yuFqyuM1';
@@ -251,6 +293,8 @@ let ordersList=[];
 let authSession=null;
 let catalogDraft=null;
 let catalogLoaded=false;
+let editingOrderId=null;
+let orderEditItemSequence=0;
 localStorage.removeItem('gh_token');
 
 function escapeHTML(value){
@@ -343,7 +387,7 @@ function formatItems(items){
 }
 async function loadOrders(){
   const body=document.getElementById('ordersTableBody');
-  body.innerHTML='<tr><td colspan="5" class="empty">Memuat laporan dari Supabase...</td></tr>';
+  body.innerHTML='<tr><td colspan="6" class="empty">Memuat laporan dari Supabase...</td></tr>';
   hideNotice(document.getElementById('dashboardNotice'));
   try{
     const allOrders=[];
@@ -373,7 +417,7 @@ async function loadOrders(){
     document.getElementById('lastUpdated').textContent=`Diperbarui ${dateLabel(new Date(),{hour:'2-digit',minute:'2-digit'})}`;
   }catch(error){
     clearReports();
-    body.innerHTML=`<tr><td colspan="5" class="empty">${escapeHTML(error.message)}</td></tr>`;
+    body.innerHTML=`<tr><td colspan="6" class="empty">${escapeHTML(error.message)}</td></tr>`;
     document.getElementById('orderCount').textContent='Laporan tidak tersedia';
     showNotice(document.getElementById('dashboardNotice'),error.message);
   }
@@ -453,7 +497,7 @@ function renderOrdersTable(){
   const target=document.getElementById('ordersTableBody');
   document.getElementById('orderCount').textContent=`Menampilkan ${filtered.length} dari ${ordersList.length} pesanan`;
   if(!filtered.length){
-    target.innerHTML=`<tr><td colspan="5" class="empty">${ordersList.length?'Tidak ada pesanan yang cocok dengan filter.':'Belum ada pesanan masuk.'}</td></tr>`;
+    target.innerHTML=`<tr><td colspan="6" class="empty">${ordersList.length?'Tidak ada pesanan yang cocok dengan filter.':'Belum ada pesanan masuk.'}</td></tr>`;
     return;
   }
   target.innerHTML=filtered.map(order=>{
@@ -465,8 +509,163 @@ function renderOrdersTable(){
       <td><div class="address">${escapeHTML(order.address)}</div></td>
       <td><div class="order-items">${itemHTML}</div></td>
       <td><span class="amount">${money(order.total_amount)}</span></td>
+      <td><div class="order-actions">
+        <button class="btn btn-secondary" type="button" data-order-action="edit" data-order-id="${escapeHTML(order.id)}" aria-label="Edit pesanan ${escapeHTML(order.name)}">Edit</button>
+        <button class="btn btn-danger" type="button" data-order-action="delete" data-order-id="${escapeHTML(order.id)}" aria-label="Hapus pesanan ${escapeHTML(order.name)}">Hapus</button>
+      </div></td>
     </tr>`;
   }).join('');
+}
+function orderItemUnitPrice(item){
+  const unitPrice=Number(item?.unit_price);
+  if(Number.isSafeInteger(unitPrice)&&unitPrice>=0) return unitPrice;
+  const quantity=Number(item?.quantity);
+  const subtotal=Number(item?.subtotal);
+  return Number.isSafeInteger(quantity)&&quantity>0&&Number.isSafeInteger(subtotal)&&subtotal>=0
+    ?Math.round(subtotal/quantity)
+    :0;
+}
+function renderOrderEditItems(items){
+  const target=document.getElementById('editOrderItems');
+  target.replaceChildren();
+  orderEditItemSequence=0;
+  items.forEach((item,index)=>appendOrderEditItem(item,index));
+}
+function appendOrderEditItem(item={name:'',quantity:1,unit_price:0},originalIndex=-1){
+  const target=document.getElementById('editOrderItems');
+  const index=orderEditItemSequence++;
+  target.insertAdjacentHTML('beforeend',`
+    <div class="edit-item" data-edit-item data-original-index="${originalIndex}">
+      <div class="edit-item-name"><label for="editItemName${index}">Nama item</label><input id="editItemName${index}" data-item-name maxlength="120" value="${escapeHTML(item.name)}" required></div>
+      <div><label for="editItemQuantity${index}">Jumlah</label><input id="editItemQuantity${index}" data-item-quantity type="number" min="1" max="1000000" step="1" value="${escapeHTML(item.quantity)}" required></div>
+      <div><label for="editItemPrice${index}">Harga satuan (Rp)</label><input id="editItemPrice${index}" data-item-price type="number" min="0" max="1000000000" step="1" value="${escapeHTML(item.unit_price)}" required><div class="edit-item-subtotal">${money(Number(item.unit_price)*Number(item.quantity))}</div></div>
+      <button class="btn btn-quiet" type="button" data-remove-order-item aria-label="Hapus item ${escapeHTML(item.name)}">Hapus item</button>
+    </div>`);
+  updateOrderEditTotal();
+}
+function addOrderEditItem(){
+  appendOrderEditItem();
+  document.querySelector('#editOrderItems [data-edit-item]:last-child [data-item-name]')?.focus();
+}
+function removeOrderEditItem(button){
+  button.closest('[data-edit-item]')?.remove();
+  updateOrderEditTotal();
+}
+function updateOrderEditTotal(){
+  let total=0;
+  for(const row of document.querySelectorAll('#editOrderItems [data-edit-item]')){
+    const quantity=Number(row.querySelector('[data-item-quantity]').value);
+    const unitPrice=Number(row.querySelector('[data-item-price]').value);
+    const subtotal=Number.isSafeInteger(quantity)&&quantity>0&&Number.isSafeInteger(unitPrice)&&unitPrice>=0
+      ?quantity*unitPrice
+      :0;
+    total+=subtotal;
+    row.querySelector('.edit-item-subtotal').textContent=money(subtotal);
+  }
+  document.getElementById('editOrderTotal').textContent=money(total);
+}
+function openOrderEditor(orderId){
+  const order=ordersList.find(item=>item.id===orderId);
+  if(!order) return;
+  editingOrderId=order.id;
+  document.getElementById('orderEditCreatedAt').textContent=`Dibuat ${dateLabel(order.created_at,{dateStyle:'medium',timeStyle:'short'})}`;
+  document.getElementById('editOrderName').value=order.name||'';
+  document.getElementById('editOrderPhone').value=order.phone||'';
+  document.getElementById('editOrderAddress').value=order.address||'';
+  const items=Array.isArray(order.items)?order.items.map(item=>({
+    ...item,
+    name:String(item?.name||item?.product_name||item?.product_id||'Produk'),
+    quantity:Number(item?.quantity)||1,
+    unit_price:orderItemUnitPrice(item)
+  })):[];
+  renderOrderEditItems(items);
+  hideNotice(document.getElementById('orderEditNotice'));
+  document.getElementById('orderEditDialog').showModal();
+  document.body.classList.add('dialog-open');
+}
+function closeOrderEditor(){
+  const dialog=document.getElementById('orderEditDialog');
+  if(dialog.open) dialog.close();
+}
+function collectOrderEdit(){
+  const name=document.getElementById('editOrderName').value.trim();
+  const phone=document.getElementById('editOrderPhone').value.trim();
+  const address=document.getElementById('editOrderAddress').value.trim();
+  if(!name||name.length>120){showNotice(document.getElementById('orderEditNotice'),'Nama pelanggan wajib diisi (maksimal 120 karakter).');return null}
+  if(!phone||phone.length>40){showNotice(document.getElementById('orderEditNotice'),'Nomor telepon wajib diisi (maksimal 40 karakter).');return null}
+  if(!address||address.length>1000){showNotice(document.getElementById('orderEditNotice'),'Alamat wajib diisi (maksimal 1.000 karakter).');return null}
+  const rows=[...document.querySelectorAll('#editOrderItems [data-edit-item]')];
+  if(!rows.length){showNotice(document.getElementById('orderEditNotice'),'Pesanan harus memiliki setidaknya satu item.');return null}
+  const items=[];
+  let total=0;
+  for(const row of rows){
+    const name=row.querySelector('[data-item-name]').value.trim();
+    const quantityText=row.querySelector('[data-item-quantity]').value;
+    const priceText=row.querySelector('[data-item-price]').value;
+    const quantity=Number(quantityText);
+    const unitPrice=Number(priceText);
+    if(!name||name.length>120){showNotice(document.getElementById('orderEditNotice'),'Nama setiap item wajib diisi (maksimal 120 karakter).');return null}
+    if(!Number.isSafeInteger(quantity)||quantity<1||quantity>1000000){showNotice(document.getElementById('orderEditNotice'),`Jumlah untuk "${name}" harus bilangan bulat antara 1 dan 1.000.000.`);return null}
+    if(!Number.isSafeInteger(unitPrice)||unitPrice<0||unitPrice>1000000000){showNotice(document.getElementById('orderEditNotice'),`Harga satuan "${name}" harus bilangan bulat antara Rp0 dan Rp1.000.000.000.`);return null}
+    const subtotal=quantity*unitPrice;
+    total+=subtotal;
+    if(!Number.isSafeInteger(total)){showNotice(document.getElementById('orderEditNotice'),'Total pesanan terlalu besar.');return null}
+    const originalIndex=Number(row.dataset.originalIndex);
+    const original=originalIndex>=0?ordersList.find(order=>order.id===editingOrderId)?.items?.[originalIndex]||{}:{};
+    items.push({...original,name,quantity,unit_price:unitPrice,subtotal});
+  }
+  return {name,phone,address,items,total_amount:total};
+}
+async function saveOrderEdit(event){
+  event.preventDefault();
+  const notice=document.getElementById('orderEditNotice');
+  hideNotice(notice);
+  const update=collectOrderEdit();
+  if(!update||!editingOrderId) return;
+  const button=document.getElementById('saveOrderEdit');
+  button.disabled=true;
+  button.textContent='Menyimpan...';
+  try{
+    const response=await supabaseFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(editingOrderId)}`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify(update)
+    });
+    if(!response.ok){
+      const detail=(await response.text()).trim();
+      throw new Error(`Gagal memperbarui pesanan (HTTP ${response.status})${detail?`: ${detail}`:''}`);
+    }
+    const rows=await response.json();
+    if(!Array.isArray(rows)||rows.length!==1) throw new Error('Pesanan tidak diperbarui. Pastikan migration pengelolaan pesanan sudah dijalankan dan akun Anda terdaftar sebagai admin.');
+    closeOrderEditor();
+    await loadOrders();
+  }catch(error){
+    showNotice(notice,error.message);
+  }finally{
+    button.disabled=false;
+    button.textContent='Simpan perubahan';
+  }
+}
+async function deleteOrder(orderId){
+  const order=ordersList.find(item=>item.id===orderId);
+  if(!order) return;
+  const confirmed=window.confirm(`Hapus pesanan dari ${order.name} secara permanen? Tindakan ini tidak dapat dibatalkan.`);
+  if(!confirmed) return;
+  try{
+    const response=await supabaseFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`,{
+      method:'DELETE',
+      headers:{'Prefer':'return=representation'}
+    });
+    if(!response.ok){
+      const detail=(await response.text()).trim();
+      throw new Error(`Gagal menghapus pesanan (HTTP ${response.status})${detail?`: ${detail}`:''}`);
+    }
+    const rows=await response.json();
+    if(!Array.isArray(rows)||rows.length!==1) throw new Error('Pesanan tidak terhapus. Pastikan migration pengelolaan pesanan sudah dijalankan dan akun Anda terdaftar sebagai admin.');
+    await loadOrders();
+  }catch(error){
+    showNotice(document.getElementById('dashboardNotice'),error.message);
+  }
 }
 function clearReports(){
   ordersList=[];
@@ -907,7 +1106,7 @@ async function logout(){
   catalogDraft=null;
   catalogLoaded=false;
   setSignedIn(false);
-  document.getElementById('ordersTableBody').innerHTML='<tr><td colspan="5" class="empty">Masuk untuk memuat laporan pesanan.</td></tr>';
+  document.getElementById('ordersTableBody').innerHTML='<tr><td colspan="6" class="empty">Masuk untuk memuat laporan pesanan.</td></tr>';
   document.getElementById('orderCount').textContent='Masuk untuk melihat riwayat pesanan';
   if(current?.access_token){
     try{
@@ -929,6 +1128,27 @@ document.getElementById('searchInput').addEventListener('input',renderOrdersTabl
 document.getElementById('dateFilter').addEventListener('change',renderOrdersTable);
 document.getElementById('ordersTab').addEventListener('click',()=>switchTab('orders'));
 document.getElementById('catalogTab').addEventListener('click',()=>switchTab('catalog'));
+document.getElementById('ordersTableBody').addEventListener('click',event=>{
+  const button=event.target.closest('[data-order-action]');
+  if(!button) return;
+  if(button.dataset.orderAction==='edit') openOrderEditor(button.dataset.orderId);
+  if(button.dataset.orderAction==='delete') deleteOrder(button.dataset.orderId);
+});
+document.getElementById('orderEditForm').addEventListener('submit',saveOrderEdit);
+document.getElementById('closeOrderDialog').addEventListener('click',closeOrderEditor);
+document.getElementById('cancelOrderEdit').addEventListener('click',closeOrderEditor);
+document.getElementById('addOrderItem').addEventListener('click',addOrderEditItem);
+document.getElementById('editOrderItems').addEventListener('click',event=>{
+  const button=event.target.closest('[data-remove-order-item]');
+  if(button) removeOrderEditItem(button);
+});
+document.getElementById('editOrderItems').addEventListener('input',event=>{
+  if(event.target.matches('[data-item-quantity],[data-item-price]')) updateOrderEditTotal();
+});
+document.getElementById('orderEditDialog').addEventListener('close',()=>{
+  document.body.classList.remove('dialog-open');
+  editingOrderId=null;
+});
 document.getElementById('addProductButton').addEventListener('click',addCatalogProduct);
 document.getElementById('saveCatalogButton').addEventListener('click',saveCatalogSettings);
 document.getElementById('reloadCatalogButton').addEventListener('click',loadCatalogSettings);
