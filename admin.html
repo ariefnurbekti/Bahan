@@ -234,6 +234,26 @@ on conflict (email) do nothing;</code>
         <div class="table-tools">
           <input class="search" id="searchInput" type="search" placeholder="Cari nama, nomor, alamat, atau produk..." aria-label="Cari pesanan">
           <input class="date-filter" id="dateFilter" type="date" aria-label="Filter tanggal pesanan">
+          <select class="date-filter" id="transactionFilter" aria-label="Filter jalur dan status transaksi">
+            <option value="">Semua transaksi</option>
+            <optgroup label="Jalur pesanan">
+              <option value="channel_whatsapp">WhatsApp</option>
+              <option value="channel_midtrans">Checkout langsung (Midtrans)</option>
+            </optgroup>
+            <optgroup label="Hasil WhatsApp">
+              <option value="outcome_won">Close Won</option>
+              <option value="outcome_lost">Close Lost</option>
+              <option value="outcome_open">Belum ditandai</option>
+            </optgroup>
+            <optgroup label="Status pembayaran">
+              <option value="payment_pending">Menunggu pembayaran</option>
+              <option value="payment_paid">Lunas</option>
+              <option value="payment_failed">Gagal</option>
+              <option value="payment_cancelled">Dibatalkan</option>
+              <option value="payment_expired">Kedaluwarsa</option>
+              <option value="payment_other">Status lainnya</option>
+            </optgroup>
+          </select>
           <button class="btn btn-secondary" id="exportButton" type="button">Unduh CSV</button>
         </div>
         <div class="table-responsive">
@@ -484,7 +504,7 @@ async function loadOrders(silent=false){
   try{
     const allOrders=[];
     for(let offset=0;;offset+=PAGE_SIZE){
-      const response=await supabaseFetch('/rest/v1/orders?select=id,created_at,name,phone,address,items,total_amount,payment_status,payment_gateway,whatsapp_outcome,transaction_status&order=created_at.desc',{
+      const response=await supabaseFetch('/rest/v1/orders?select=id,created_at,name,phone,address,items,total_amount,payment_status,payment_gateway,whatsapp_outcome,transaction_status,payment_type,midtrans_order_id&order=created_at.desc',{
         headers:{'Range-Unit':'items','Range':`${offset}-${offset+PAGE_SIZE-1}`},
         cache:'no-store'
       });
@@ -767,10 +787,20 @@ function renderTopProducts(){
 function filteredOrders(){
   const query=document.getElementById('searchInput').value.trim().toLocaleLowerCase('id');
   const selectedDate=document.getElementById('dateFilter').value;
+  const transactionFilter=document.getElementById('transactionFilter').value;
   return ordersList.filter(order=>{
     const itemText=formatItems(order.items).map(item=>item.name).join(' ');
-    const searchable=[order.name,order.phone,order.address,itemText].join(' ').toLocaleLowerCase('id');
-    return (!query||searchable.includes(query))&&(!selectedDate||localDateKey(new Date(order.created_at))===selectedDate);
+    const payment=paymentStatusLabel(order.payment_status);
+    const searchable=[order.name,order.phone,order.address,itemText,payment.label,order.payment_type,order.transaction_status,order.midtrans_order_id].join(' ').toLocaleLowerCase('id');
+    const matchesTransaction=!transactionFilter||
+      (transactionFilter==='channel_whatsapp'&&isWhatsAppOrder(order))||
+      (transactionFilter==='channel_midtrans'&&order.payment_gateway==='midtrans')||
+      (transactionFilter==='outcome_won'&&isWhatsAppOrder(order)&&order.whatsapp_outcome==='won')||
+      (transactionFilter==='outcome_lost'&&isWhatsAppOrder(order)&&order.whatsapp_outcome==='lost')||
+      (transactionFilter==='outcome_open'&&isWhatsAppOrder(order)&&!order.whatsapp_outcome)||
+      (transactionFilter.startsWith('payment_')&&transactionFilter==='payment_'+order.payment_status)||
+      (transactionFilter==='payment_other'&&!['pending','paid','failed','cancelled','expired'].includes(order.payment_status));
+    return (!query||searchable.includes(query))&&(!selectedDate||localDateKey(new Date(order.created_at))===selectedDate)&&matchesTransaction;
   });
 }
 function renderOrdersTable(){
@@ -780,7 +810,7 @@ function renderOrdersTable(){
   setOrdersTableHeader(productNames);
   document.getElementById('orderCount').textContent=`Menampilkan ${filtered.length} dari ${ordersList.length} pesanan`;
   if(!filtered.length){
-    target.innerHTML=`<tr><td colspan="${6+productNames.length}" class="empty">${ordersList.length?'Tidak ada pesanan yang cocok dengan filter.':'Belum ada pesanan masuk.'}</td></tr>`;
+    target.innerHTML=`<tr><td colspan="${ordersTableColumnCount()}" class="empty">${ordersList.length?'Tidak ada pesanan yang cocok dengan filter.':'Belum ada pesanan masuk.'}</td></tr>`;
     return;
   }
   target.innerHTML=filtered.map(order=>{
@@ -1468,6 +1498,7 @@ document.getElementById('refreshButton').addEventListener('click',loadOrders);
 document.getElementById('exportButton').addEventListener('click',exportOrdersToCSV);
 document.getElementById('searchInput').addEventListener('input',renderOrdersTable);
 document.getElementById('dateFilter').addEventListener('change',renderOrdersTable);
+document.getElementById('transactionFilter').addEventListener('change',renderOrdersTable);
 document.getElementById('ordersTab').addEventListener('click',()=>switchTab('orders'));
 document.getElementById('catalogTab').addEventListener('click',()=>switchTab('catalog'));
 document.getElementById('ordersTableBody').addEventListener('click',event=>{
