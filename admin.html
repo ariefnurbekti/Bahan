@@ -91,6 +91,10 @@ tbody tr:hover{background:#fbfdfb}
 .order-line span:last-child{white-space:nowrap;color:var(--muted)}
 .amount{font-weight:850;white-space:nowrap;color:var(--green)}
 .address{max-width:220px;min-width:150px;white-space:pre-wrap;overflow-wrap:anywhere;color:#526259}
+.product-order-cell{min-width:110px;text-align:center}
+.product-order-cell strong{display:block;white-space:nowrap}
+.product-order-cell span{display:block;margin-top:3px;color:var(--muted);font-size:10px;white-space:nowrap}
+.product-order-header{min-width:110px;max-width:170px;white-space:normal}
 .empty{padding:34px 16px;text-align:center;color:var(--muted)}
 .table-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 19px;color:var(--muted);font-size:11px}
 .toast{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:5;background:#173c2a;color:#fff;border-radius:11px;padding:12px 16px;max-width:calc(100% - 28px);box-shadow:0 8px 30px #0002;font-size:13px;text-align:center}
@@ -222,8 +226,8 @@ on conflict (email) do nothing;</code>
         </div>
         <div class="table-responsive">
           <table>
-            <thead><tr><th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th><th>Detail pesanan</th><th>Total</th><th>Aksi</th></tr></thead>
-            <tbody id="ordersTableBody"><tr><td colspan="6" class="empty">Masuk untuk memuat laporan pesanan.</td></tr></tbody>
+            <thead><tr id="ordersTableHead"><th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th><th>Total</th><th>Aksi</th></tr></thead>
+            <tbody id="ordersTableBody"><tr><td colspan="5" class="empty">Masuk untuk memuat laporan pesanan.</td></tr></tbody>
           </table>
         </div>
         <div class="table-foot"><span id="tableFootNote">Data pesanan dilindungi akses admin. <span id="realtimeStatus" aria-live="polite">Menghubungkan ke sinkronisasi langsung...</span></span><span id="lastUpdated"></span></div>
@@ -306,6 +310,7 @@ let realtimeJoinRef=null;
 let realtimeConnected=false;
 let ordersLoadInProgress=false;
 let ordersReloadQueued=false;
+let ordersReloadSilent=true;
 localStorage.removeItem('gh_token');
 
 function escapeHTML(value){
@@ -397,15 +402,50 @@ function formatItems(items){
     subtotal:Number(item?.subtotal)||0
   }));
 }
-async function loadOrders(){
+function orderProductNames(){
+  const names=new Set();
+  for(const order of ordersList){
+    for(const item of formatItems(order.items)) names.add(item.name);
+  }
+  return [...names];
+}
+function orderItemsByName(order){
+  const items=new Map();
+  for(const item of formatItems(order.items)){
+    const current=items.get(item.name)||{quantity:0,subtotal:0};
+    current.quantity+=item.quantity;
+    current.subtotal+=item.subtotal;
+    items.set(item.name,current);
+  }
+  return items;
+}
+function ordersTableColumnCount(){
+  return 5+orderProductNames().length;
+}
+function setOrdersTableHeader(productNames){
+  const head=document.getElementById('ordersTableHead');
+  head.innerHTML='<th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th>'+
+    productNames.map(name=>`<th class="product-order-header">${escapeHTML(name)}</th>`).join('')+
+    '<th>Total</th><th>Aksi</th>';
+  const width=Math.max(950,760+productNames.length*125);
+  document.querySelector('.table-responsive table').style.minWidth=`${width}px`;
+}
+async function loadOrders(silent=false){
   if(ordersLoadInProgress){
-    ordersReloadQueued=true;
+    if(!ordersReloadQueued){
+      ordersReloadQueued=true;
+      ordersReloadSilent=silent;
+    }else{
+      ordersReloadSilent=ordersReloadSilent&&silent;
+    }
     return;
   }
   ordersLoadInProgress=true;
   const body=document.getElementById('ordersTableBody');
-  body.innerHTML='<tr><td colspan="6" class="empty">Memuat laporan dari Supabase...</td></tr>';
-  hideNotice(document.getElementById('dashboardNotice'));
+  if(!silent){
+    body.innerHTML=`<tr><td colspan="${ordersTableColumnCount()}" class="empty">Memuat laporan dari Supabase...</td></tr>`;
+    hideNotice(document.getElementById('dashboardNotice'));
+  }
   try{
     const allOrders=[];
     for(let offset=0;;offset+=PAGE_SIZE){
@@ -433,16 +473,21 @@ async function loadOrders(){
     ordersList=allOrders;
     renderReports();
     document.getElementById('lastUpdated').textContent=`Diperbarui ${dateLabel(new Date(),{hour:'2-digit',minute:'2-digit'})}`;
+    hideNotice(document.getElementById('dashboardNotice'));
   }catch(error){
-    clearReports();
-    body.innerHTML=`<tr><td colspan="6" class="empty">${escapeHTML(error.message)}</td></tr>`;
-    document.getElementById('orderCount').textContent='Laporan tidak tersedia';
+    if(!silent){
+      clearReports();
+      body.innerHTML=`<tr><td colspan="${ordersTableColumnCount()}" class="empty">${escapeHTML(error.message)}</td></tr>`;
+      document.getElementById('orderCount').textContent='Laporan tidak tersedia';
+    }
     showNotice(document.getElementById('dashboardNotice'),error.message);
   }finally{
     ordersLoadInProgress=false;
     if(ordersReloadQueued){
+      const reloadSilent=ordersReloadSilent;
       ordersReloadQueued=false;
-      loadOrders();
+      ordersReloadSilent=true;
+      loadOrders(reloadSilent);
     }
   }
 }
@@ -470,7 +515,7 @@ function stopRealtimeOrders(){
 }
 function queueRealtimeOrdersReload(){
   clearTimeout(ordersReloadTimer);
-  ordersReloadTimer=setTimeout(()=>loadOrders(),350);
+  ordersReloadTimer=setTimeout(()=>loadOrders(true),350);
 }
 function scheduleRealtimeReconnect(){
   if(!authSession||realtimeReconnectTimer) return;
@@ -526,7 +571,7 @@ async function startRealtimeOrders(){
     realtimeSocket=socket;
     setRealtimeStatus('Menghubungkan ke sinkronisasi langsung...');
     realtimeFallbackTimer=setInterval(()=>{
-      if(!realtimeConnected&&document.visibilityState!=='hidden') loadOrders();
+      if(!realtimeConnected&&document.visibilityState!=='hidden') loadOrders(true);
     },15000);
     socket.addEventListener('open',()=>{
       if(realtimeSocket!==socket) return;
@@ -604,7 +649,7 @@ async function startRealtimeOrders(){
 function startRealtimeFallback(){
   clearInterval(realtimeFallbackTimer);
   realtimeFallbackTimer=setInterval(()=>{
-    if(document.visibilityState!=='hidden') loadOrders();
+    if(document.visibilityState!=='hidden') loadOrders(true);
   },10000);
   if(realtimeConnected) setRealtimeStatus('Sinkronisasi langsung aktif; data juga diperiksa berkala.');
 }
@@ -681,19 +726,26 @@ function filteredOrders(){
 function renderOrdersTable(){
   const filtered=filteredOrders();
   const target=document.getElementById('ordersTableBody');
+  const productNames=orderProductNames();
+  setOrdersTableHeader(productNames);
   document.getElementById('orderCount').textContent=`Menampilkan ${filtered.length} dari ${ordersList.length} pesanan`;
   if(!filtered.length){
-    target.innerHTML=`<tr><td colspan="6" class="empty">${ordersList.length?'Tidak ada pesanan yang cocok dengan filter.':'Belum ada pesanan masuk.'}</td></tr>`;
+    target.innerHTML=`<tr><td colspan="${5+productNames.length}" class="empty">${ordersList.length?'Tidak ada pesanan yang cocok dengan filter.':'Belum ada pesanan masuk.'}</td></tr>`;
     return;
   }
   target.innerHTML=filtered.map(order=>{
-    const items=formatItems(order.items);
-    const itemHTML=items.length?items.map(item=>`<div class="order-line"><span>${escapeHTML(item.name)} × ${item.quantity}</span><span>${money(item.subtotal)}</span></div>`).join(''):'—';
+    const items=orderItemsByName(order);
+    const productCells=productNames.map(name=>{
+      const item=items.get(name);
+      return item
+        ?`<td class="product-order-cell"><strong>${item.quantity} unit</strong><span>${money(item.subtotal)}</span></td>`
+        :'<td class="product-order-cell">—</td>';
+    }).join('');
     return `<tr>
       <td>${escapeHTML(dateLabel(order.created_at,{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}))}</td>
       <td><span class="customer">${escapeHTML(order.name)}</span><span class="customer-contact">${escapeHTML(order.phone)}</span></td>
       <td><div class="address">${escapeHTML(order.address)}</div></td>
-      <td><div class="order-items">${itemHTML}</div></td>
+      ${productCells}
       <td><span class="amount">${money(order.total_amount)}</span></td>
       <td><div class="order-actions">
         <button class="btn btn-secondary" type="button" data-order-action="edit" data-order-id="${escapeHTML(order.id)}" aria-label="Edit pesanan ${escapeHTML(order.name)}">Edit</button>
@@ -855,6 +907,7 @@ async function deleteOrder(orderId){
 }
 function clearReports(){
   ordersList=[];
+  setOrdersTableHeader([]);
   document.getElementById('metricOrders').textContent='—';
   document.getElementById('metricRevenue').textContent='—';
   document.getElementById('metricToday').textContent='—';
@@ -1217,12 +1270,17 @@ function exportOrdersToCSV(){
     showNotice(document.getElementById('dashboardNotice'),'Tidak ada pesanan untuk diekspor dengan filter saat ini.');
     return;
   }
-  const rows=[['Waktu','Nama Pelanggan','No. Telepon','Alamat Kirim','Detail Pesanan','Total']];
+  const productNames=orderProductNames();
+  const rows=[['Waktu','Nama Pelanggan','No. Telepon','Alamat Kirim',...productNames.map(name=>`${name} (jumlah; subtotal)`),'Total']];
   for(const order of selected){
+    const items=orderItemsByName(order);
     rows.push([
       dateLabel(order.created_at,{dateStyle:'short',timeStyle:'short'}),
       order.name,order.phone,order.address,
-      formatItems(order.items).map(item=>`${item.name} x${item.quantity}`).join('; '),
+      ...productNames.map(name=>{
+        const item=items.get(name);
+        return item?`${item.quantity} unit; ${item.subtotal}`:'';
+      }),
       order.total_amount
     ]);
   }
@@ -1292,7 +1350,7 @@ async function logout(){
   catalogDraft=null;
   catalogLoaded=false;
   setSignedIn(false);
-  document.getElementById('ordersTableBody').innerHTML='<tr><td colspan="6" class="empty">Masuk untuk memuat laporan pesanan.</td></tr>';
+  document.getElementById('ordersTableBody').innerHTML='<tr><td colspan="5" class="empty">Masuk untuk memuat laporan pesanan.</td></tr>';
   document.getElementById('orderCount').textContent='Masuk untuk melihat riwayat pesanan';
   if(current?.access_token){
     try{
