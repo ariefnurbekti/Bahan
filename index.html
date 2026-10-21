@@ -6,10 +6,11 @@
 <style>
 :root{--green:#176b45;--green2:#22865a;--cream:#fbf8f0;--ink:#18332a;--muted:#68766f;--line:#e5e9e2;--white:#fff}*{box-sizing:border-box}body{margin:0;background:var(--cream);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--ink)}button,input,textarea{font:inherit}.wrap{max-width:1080px;margin:auto;padding:0 20px}header{background:linear-gradient(120deg,#104d35,#23875a);color:#fff}.nav{display:flex;justify-content:space-between;align-items:center;gap:12px;padding-top:18px}.brand{font-weight:850;letter-spacing:-.4px;font-size:19px}.brand span{color:#d7f0c5}.navright{display:flex;gap:8px;align-items:center}.pill{font-size:12px;border:1px solid #ffffff55;border-radius:30px;padding:7px 11px}
 .trust-banner{display:none;background:linear-gradient(90deg,#1c6b4b,#299667);color:#fff;border-radius:14px;padding:16px 20px;margin:24px 0 10px;box-shadow:0 6px 20px rgba(0,0,0,0.08);border:1px solid #ffffff33}.trust-banner h3{margin:0 0 4px;font-size:16px;letter-spacing:-.3px}.trust-banner p{margin:0;font-size:13px;opacity:.92;line-height:1.4}
-.hero{padding:32px 0 38px;display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:center}.eyebrow{text-transform:uppercase;letter-spacing:2px;font-size:11px;font-weight:800;color:#d6efc9}h1{font-size:clamp(32px,4.5vw,50px);line-height:1.05;letter-spacing:-1.5px;margin:10px 0 14px;max-width:620px}.hero p{color:#e5f3e9;line-height:1.6;max-width:480px;margin:0 0 20px}.cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:#fff;color:var(--green);font-weight:800;padding:12px 18px;border-radius:12px}.hero-art{background:#f4e8cc;border-radius:28px;min-height:220px;display:flex;align-items:center;justify-content:center;padding:18px;position:relative;overflow:hidden}.hero-art.has-gallery{height:220px;min-height:0;padding:10px}.hero-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;height:100%}.hero-gallery img{width:100%;height:100%;min-width:0;object-fit:cover;border-radius:16px}.food{font-size:80px;filter:drop-shadow(0 10px 7px #765b3330)}.food-caption{position:absolute;bottom:14px;left:16px;right:16px;background:#ffffffdf;padding:9px 12px;border-radius:11px;font-size:12px;font-weight:800;color:#28533d;text-align:center}main{padding:30px 0 60px}.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:18px}.section-head h2{font-size:26px;letter-spacing:-.8px;margin:0}.section-head p{margin:5px 0 0;color:var(--muted);font-size:14px}.tag{color:var(--green);border:1px solid #cbdccf;border-radius:30px;padding:7px 11px;font-size:12px}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.product{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 5px 18px #163e2710;display:flex;flex-direction:column;min-width:0}.product-visual{height:120px;background:#f5f3e9;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:45px;margin-bottom:14px;overflow:hidden}.product-visual img{width:100%;height:100%;object-fit:cover}.product h3{font-size:16px;margin:0 0 6px}.desc{font-size:12px;color:var(--muted);min-height:30px;line-height:1.4}.price{font-size:22px;font-weight:850;color:var(--green);margin:12px 0}.qtyrow{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:11px;padding:5px;margin-top:auto}.qtyrow button{width:32px;height:32px;border:0;border-radius:8px;background:#edf5ee;color:var(--green);font-size:20px;font-weight:700;cursor:pointer}.qty{font-weight:800;min-width:24px;text-align:center}.add{margin-top:10px;width:100%;background:var(--green);color:white;border:0;border-radius:11px;padding:11px;font-weight:800;cursor:pointer}.add:hover,.checkout:hover{background:#105638}.note{font-size:12px;color:var(--muted);margin-top:13px}
-.order-container{margin-top:30px;display:grid;grid-template-columns:1.2fr 1fr;gap:20px}.panel-box{background:white;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 5px 18px #163e270a}.panel-box h2{margin:0 0 6px;font-size:19px}.panel-box p{margin:0 0 15px;color:var(--muted);font-size:13px}.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}.field label{font-size:12px;font-weight:800;color:var(--ink)}.field input,.field textarea{border:1px solid #ccd7ce;border-radius:10px;padding:10px 12px;width:100%;background:#fff;color:var(--ink)}.field textarea{resize:vertical;min-height:75px}.summary-box{display:flex;flex-direction:column;justify-content:space-between;height:100%}.total-area{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}.total{font-size:24px;font-weight:900;color:var(--green);text-align:right}.total-label{font-size:11px;color:var(--muted);text-align:right;margin-bottom:2px}.checkout{background:#1e9b59;color:white;border:0;border-radius:12px;padding:14px 18px;font-weight:850;cursor:pointer;margin-top:12px;width:100%}
+.hero{padding:32px 0 38px;display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:center}.eyebrow{text-transform:uppercase;letter-spacing:2px;font-size:11px;font-weight:800;color:#d6efc9}.hero-kpis{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 18px}.hero-kpi{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);border-radius:999px;padding:8px 12px;color:#f3fff6;font-size:12px;font-weight:700;backdrop-filter:blur(4px)}h1{font-size:clamp(32px,4.5vw,50px);line-height:1.05;letter-spacing:-1.5px;margin:10px 0 14px;max-width:620px}.hero p{color:#e5f3e9;line-height:1.6;max-width:480px;margin:0 0 20px}.cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:#fff;color:var(--green);font-weight:800;padding:12px 18px;border-radius:12px;box-shadow:0 12px 24px rgba(11,33,23,0.18);transition:transform .2s ease, box-shadow .2s ease}.cta:hover{transform:translateY(-1px);box-shadow:0 16px 30px rgba(11,33,23,0.23)}.cta.secondary{background:#f3d790;color:#4d3304;margin-left:8px}.hero-art{background:linear-gradient(135deg,#f4e8cc,#f2d8a0);border-radius:28px;min-height:220px;display:flex;align-items:center;justify-content:center;padding:18px;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(25,58,40,.06)}.hero-art.has-gallery{height:220px;min-height:0;padding:10px}.hero-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;height:100%}.hero-gallery img{width:100%;height:100%;min-width:0;object-fit:cover;border-radius:16px}.food{font-size:80px;filter:drop-shadow(0 10px 7px #765b3330)}.food-caption{position:absolute;bottom:14px;left:16px;right:16px;background:#ffffffdf;padding:9px 12px;border-radius:11px;font-size:12px;font-weight:800;color:#28533d;text-align:center}.hero-badges{position:absolute;inset:16px auto auto 16px;display:flex;flex-direction:column;gap:8px}.mini-badge{background:#fff;box-shadow:0 10px 20px rgba(23,107,69,.12);padding:7px 9px;border-radius:12px;color:var(--green);font-size:11px;font-weight:800}.mini-badge strong{display:block;font-size:14px}.main{padding:30px 0 60px}.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:18px}.section-head h2{font-size:26px;letter-spacing:-.8px;margin:0}.section-head p{margin:5px 0 0;color:var(--muted);font-size:14px}.tag{color:var(--green);border:1px solid #cbdccf;border-radius:30px;padding:7px 11px;font-size:12px}.feature-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 22px}.feature-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 6px 18px rgba(22,62,39,.04)}.feature-box strong{display:block;color:var(--ink);font-size:15px;margin-bottom:6px}.feature-box span{color:var(--muted);font-size:12px;line-height:1.5}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.product{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 5px 18px #163e2710;display:flex;flex-direction:column;min-width:0;transition:transform .18s ease, box-shadow .18s ease}.product:hover{transform:translateY(-3px);box-shadow:0 18px 28px rgba(22,62,39,.12)}.product-visual{height:120px;background:linear-gradient(135deg,#f5f3e9,#f4e7d0);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:45px;margin-bottom:12px;overflow:hidden;position:relative}.product-visual img{width:100%;height:100%;object-fit:cover}.product-header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.product-badge{display:inline-block;padding:5px 8px;border-radius:999px;background:#fff6d5;color:#7b5b00;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}.product h3{font-size:16px;margin:0}.desc{font-size:12px;color:var(--muted);min-height:30px;line-height:1.4}.price{font-size:22px;font-weight:850;color:var(--green);margin:12px 0}.qtyrow{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:11px;padding:5px;margin-top:auto}.qtyrow button{width:32px;height:32px;border:0;border-radius:8px;background:#edf5ee;color:var(--green);font-size:20px;font-weight:700;cursor:pointer}.qty{font-weight:800;min-width:24px;text-align:center}.add{margin-top:10px;width:100%;background:linear-gradient(135deg,var(--green),#1b925a);color:white;border:0;border-radius:11px;padding:11px;font-weight:800;cursor:pointer;box-shadow:0 12px 20px rgba(23,107,69,.18)}.add:hover,.checkout:hover{background:#105638}.note{font-size:12px;color:var(--muted);margin-top:13px}
+.hero{padding:32px 0 38px;display:grid;grid-template-columns:1.15fr .85fr;gap:28px;align-items:center}.eyebrow{text-transform:uppercase;letter-spacing:2px;font-size:11px;font-weight:800;color:#d6efc9}.hero-kpis{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 18px}.hero-kpi{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);border-radius:999px;padding:8px 12px;color:#f3fff6;font-size:12px;font-weight:700;backdrop-filter:blur(4px)}h1{font-size:clamp(32px,4.5vw,50px);line-height:1.05;letter-spacing:-1.5px;margin:10px 0 14px;max-width:620px}.hero p{color:#e5f3e9;line-height:1.6;max-width:480px;margin:0 0 20px}.cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;text-decoration:none;background:#fff;color:var(--green);font-weight:800;padding:12px 18px;border-radius:12px;box-shadow:0 12px 24px rgba(11,33,23,0.18);transition:transform .2s ease, box-shadow .2s ease}.cta:hover{transform:translateY(-1px);box-shadow:0 16px 30px rgba(11,33,23,0.23)}.cta.secondary{background:#f3d790;color:#4d3304;margin-left:8px}.hero-art{background:linear-gradient(135deg,#f4e8cc,#f2d8a0);border-radius:28px;min-height:220px;display:flex;align-items:center;justify-content:center;padding:18px;position:relative;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(25,58,40,.06)}.hero-art.has-gallery{height:220px;min-height:0;padding:10px}.hero-gallery{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;height:100%}.hero-gallery img{width:100%;height:100%;min-width:0;object-fit:cover;border-radius:16px}.food{font-size:80px;filter:drop-shadow(0 10px 7px #765b3330)}.food-caption{position:absolute;bottom:14px;left:16px;right:16px;background:#ffffffdf;padding:9px 12px;border-radius:11px;font-size:12px;font-weight:800;color:#28533d;text-align:center}.hero-badges{position:absolute;inset:16px auto auto 16px;display:flex;flex-direction:column;gap:8px}.mini-badge{background:#fff;box-shadow:0 10px 20px rgba(23,107,69,.12);padding:7px 9px;border-radius:12px;color:var(--green);font-size:11px;font-weight:800}.mini-badge strong{display:block;font-size:14px}.main{padding:30px 0 60px}.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:18px}.section-head h2{font-size:26px;letter-spacing:-.8px;margin:0}.section-head p{margin:5px 0 0;color:var(--muted);font-size:14px}.tag{color:var(--green);border:1px solid #cbdccf;border-radius:30px;padding:7px 11px;font-size:12px}.feature-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:0 0 22px}.feature-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 6px 18px rgba(22,62,39,.04)}.feature-box strong{display:block;color:var(--ink);font-size:15px;margin-bottom:6px}.feature-box span{color:var(--muted);font-size:12px;line-height:1.5}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.product{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:0 5px 18px #163e2710;display:flex;flex-direction:column;min-width:0;transition:transform .18s ease, box-shadow .18s ease}.product:hover{transform:translateY(-3px);box-shadow:0 18px 28px rgba(22,62,39,.12)}.product-visual{height:120px;background:linear-gradient(135deg,#f5f3e9,#f4e7d0);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:45px;margin-bottom:12px;overflow:hidden;position:relative}.product-visual img{width:100%;height:100%;object-fit:cover}.product-header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}.product-badge{display:inline-block;padding:5px 8px;border-radius:999px;background:#fff6d5;color:#7b5b00;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase}.product h3{font-size:16px;margin:0}.desc{font-size:12px;color:var(--muted);min-height:30px;line-height:1.4}.price{font-size:22px;font-weight:850;color:var(--green);margin:12px 0}.qtyrow{display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:11px;padding:5px;margin-top:auto}.qtyrow button{width:32px;height:32px;border:0;border-radius:8px;background:#edf5ee;color:var(--green);font-size:20px;font-weight:700;cursor:pointer}.qty{font-weight:800;min-width:24px;text-align:center}.add{margin-top:10px;width:100%;background:linear-gradient(135deg,var(--green),#1b925a);color:white;border:0;border-radius:11px;padding:11px;font-weight:800;cursor:pointer;box-shadow:0 12px 20px rgba(23,107,69,.18)}.add:hover,.checkout:hover{background:#105638}.note{font-size:12px;color:var(--muted);margin-top:13px}
+.order-container{margin-top:30px;display:grid;grid-template-columns:1.2fr 1fr;gap:20px}.panel-box{background:white;border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:0 5px 18px #163e270a}.panel-box h2{margin:0 0 6px;font-size:19px}.panel-box p{margin:0 0 15px;color:var(--muted);font-size:13px}.field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}.field label{font-size:12px;font-weight:800;color:var(--ink)}.field input,.field textarea{border:1px solid #ccd7ce;border-radius:10px;padding:10px 12px;width:100%;background:#fff;color:var(--ink)}.field textarea{resize:vertical;min-height:75px}.summary-box{display:flex;flex-direction:column;justify-content:space-between;height:100%}.total-area{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}.total{font-size:24px;font-weight:900;color:var(--green);text-align:right}.total-label{font-size:11px;color:var(--muted);text-align:right;margin-bottom:2px}.checkout{background:linear-gradient(135deg,#1e9b59,#126c46);color:white;border:0;border-radius:12px;padding:14px 18px;font-weight:850;cursor:pointer;margin-top:12px;width:100%}
 footer{background:#103e2d;color:#d5e9dc;padding:24px 0;font-size:12px;margin-top:40px}.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}.toast{display:none;position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#18332a;color:#fff;padding:12px 16px;border-radius:12px;box-shadow:0 6px 24px #0002;font-size:13px;z-index:20;max-width:90%;text-align:center}
-@media(max-width:760px){.hero{grid-template-columns:1fr;padding:26px 0}.hero-art{min-height:140px}.food{font-size:60px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.product{padding:12px}.product-visual{height:95px}.section-head{align-items:start;flex-direction:column}.order-container{grid-template-columns:1fr}.total,.total-label{text-align:left}.brand{font-size:16px}.navright .pill{display:none}}
+@media(max-width:760px){.hero{grid-template-columns:1fr;padding:26px 0}.hero-art{min-height:140px}.food{font-size:60px}.feature-strip{grid-template-columns:1fr;gap:10px}.grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}.product{padding:12px}.product-visual{height:95px}.section-head{align-items:start;flex-direction:column}.order-container{grid-template-columns:1fr}.total,.total-label{text-align:left}.brand{font-size:16px}.navright .pill{display:none}}
 button,a{-webkit-tap-highlight-color:transparent}
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid #e2ab42;outline-offset:2px}
 @media(max-width:760px){
@@ -18,15 +19,20 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
   .brand{font-size:15px;line-height:1.25}
   .hero{gap:18px;padding:24px 0 22px}
   .eyebrow{font-size:10px;letter-spacing:1.5px}
+  .hero-kpis{gap:8px;margin-bottom:14px}
+  .hero-kpi{padding:7px 10px;font-size:11px}
   h1{font-size:clamp(30px,9vw,42px);letter-spacing:-1.1px;margin:9px 0 11px}
   .hero p{font-size:14px;line-height:1.5;margin-bottom:16px}
   .cta{min-height:46px;padding:12px 16px}
+  .cta.secondary{margin-left:0;margin-top:8px;display:inline-flex}
   .hero-art{min-height:112px;border-radius:20px}
   .hero-art.has-gallery{height:150px}
   .hero-gallery{gap:6px}
   .hero-gallery img{border-radius:12px}
   .food{font-size:52px}
   .food-caption{bottom:10px;left:10px;right:10px;padding:7px 9px;font-size:11px}
+  .mini-badge{padding:6px 8px;font-size:10px}
+  .mini-badge strong{font-size:12px}
   .trust-banner{padding:13px 14px;margin:16px 0 8px}
   .trust-banner h3{font-size:15px}
   .trust-banner p{font-size:12px}
@@ -35,9 +41,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
   .section-head h2{font-size:23px}
   .section-head p{font-size:13px}
   .tag{padding:6px 10px}
+  .feature-strip{margin-bottom:16px}
+  .feature-box{padding:13px}
+  .feature-box strong{font-size:14px}
   .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .product{padding:10px;border-radius:15px}
   .product-visual{height:88px;margin-bottom:10px;border-radius:11px;font-size:38px}
+  .product-header{margin-bottom:6px}
+  .product-badge{padding:4px 7px;font-size:9px}
   .product h3{font-size:14px;line-height:1.3;overflow-wrap:anywhere}
   .desc{font-size:11px;min-height:31px}
   .price{font-size:18px;margin:9px 0}
@@ -70,7 +81,33 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
   .product-visual{height:78px}
   .price{font-size:17px}
   .panel-box{padding:14px}
+  .qtyrow button{width:32px}
+  .qty{width:42px}
 }
+.hero-kpis,.hero h1,.hero>div>p,.hero>div>div:last-child{animation:fade-up .65s both}
+.hero h1{animation-delay:.08s}.hero>div>p{animation-delay:.16s}.hero>div>div:last-child{animation-delay:.24s}
+.hero-art{animation:soft-pop .7s .12s both}
+.feature-box,.product{animation:fade-up .55s both}
+.feature-box:nth-child(2){animation-delay:.08s}.feature-box:nth-child(3){animation-delay:.16s}
+.product:nth-child(2){animation-delay:.06s}.product:nth-child(3){animation-delay:.12s}.product:nth-child(4){animation-delay:.18s}
+.faq{margin-top:34px}.faq-list{display:grid;gap:10px}
+.faq-item{background:#fff;border:1px solid var(--line);border-radius:14px;padding:0 16px;box-shadow:0 5px 18px #163e2708}
+.faq-item summary{cursor:pointer;list-style:none;padding:16px 28px 16px 0;font-weight:800;position:relative}
+.faq-item summary::-webkit-details-marker{display:none}
+.faq-item summary:after{content:"+";position:absolute;right:0;top:12px;color:var(--green);font-size:22px}
+.faq-item[open] summary:after{content:"−"}
+.faq-item p{margin:0;padding:0 0 16px;color:var(--muted);font-size:14px;line-height:1.6}
+.review-invite{margin-top:22px;padding:22px;border-radius:18px;background:linear-gradient(120deg,#104d35,#23875a);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:18px}
+.review-invite[hidden]{display:none}
+.review-invite h2{margin:0 0 6px;font-size:20px}.review-invite p{margin:0;color:#e5f3e9;font-size:13px;line-height:1.5}
+.review-link{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;padding:12px 16px;background:#fff;color:var(--green);border-radius:11px;text-decoration:none;font-weight:800}
+.qty{width:58px;min-width:24px;height:32px;padding:0;border:0;background:transparent;color:var(--ink);font-weight:800;text-align:center}
+.qty::-webkit-inner-spin-button,.qty::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.qty{-moz-appearance:textfield}
+@media(max-width:600px){.review-invite{align-items:stretch;flex-direction:column;padding:18px}.review-link{min-height:46px}}
+@keyframes fade-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes soft-pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
 </style></head>
 <body>
 <header>
@@ -81,13 +118,38 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
   <p id="bannerDescText"></p>
 </div>
 <section class="hero">
-<div><div class="eyebrow">Teman masak setiap hari</div><h1 id="heroTitle">Tahu & tempe segar, tinggal pesan.</h1><p>Pilih produk favorit, atur jumlahnya, isi data diri, lalu kirim pesanan langsung ke WhatsApp.</p><a class="cta" href="#produk">Lihat Pricelist <span>↓</span></a></div>
-<div class="hero-art" id="heroArt"><div class="food">🧈 🫘</div><div class="food-caption">Pilihan sederhana untuk menu lezat setiap hari</div></div>
+<div>
+  <div class="eyebrow">Teman masak setiap hari</div>
+  <div class="hero-kpis">
+    <div class="hero-kpi">✅ Segar setiap hari</div>
+    <div class="hero-kpi">⚡ Pesan cepat</div>
+    <div class="hero-kpi">💬 Langsung WhatsApp</div>
+  </div>
+  <h1 id="heroTitle">Tahu & tempe segar, tinggal pesan.</h1>
+  <p>Pilih produk favorit, atur jumlahnya, isi data diri, lalu kirim pesanan langsung ke WhatsApp.</p>
+  <div>
+    <a class="cta" href="#produk">Lihat Pricelist <span>↓</span></a>
+    <a class="cta secondary" href="#produk">Pesan sekarang</a>
+  </div>
+</div>
+<div class="hero-art" id="heroArt">
+  <div class="hero-badges">
+    <div class="mini-badge"><strong>Kedelai pilihan</strong> 100% kedelai</div>
+    <div class="mini-badge"><strong>Stok & ukuran</strong> konfirmasi via WhatsApp</div>
+  </div>
+  <div class="food">🧈 🫘</div>
+  <div class="food-caption">Pilihan sederhana untuk menu lezat setiap hari</div>
+</div>
 </section>
 </div>
 </header>
 
 <main class="wrap" id="produk">
+<div class="feature-strip">
+  <div class="feature-box"><strong>Segar tiap hari</strong><span>Bahan baku dipilih dan dikirim dengan kualitas terbaik untuk keluarga Anda.</span></div>
+  <div class="feature-box"><strong>Rasa pas untuk semua menu</strong><span>Siap bikin masakan sederhana maupun sajian yang lebih istimewa.</span></div>
+  <div class="feature-box"><strong>Pesan tanpa ribet</strong><span>Isi data diri, pilih produk, lalu langsung kirim ke WhatsApp.</span></div>
+</div>
 <div class="section-head"><div><h2>Pricelist Produk</h2><p>Pilih jumlah produk yang ingin dipesan.</p></div><div class="tag">Harga dalam Rupiah</div></div>
 <div class="grid" id="products"></div>
 <p class="note">* Satuan/ukuran produk dan ketersediaan dapat dikonfirmasi melalui WhatsApp.</p>
@@ -113,16 +175,27 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
     </div>
   </div>
 </div>
+
+<section class="faq" aria-labelledby="faqTitle">
+  <div class="section-head"><div><h2 id="faqTitle">Pertanyaan yang sering ditanyakan</h2><p>Info singkat sebelum Anda memesan.</p></div></div>
+  <div class="faq-list">
+    <details class="faq-item"><summary>Bagaimana cara memesan?</summary><p>Pilih produk dan jumlahnya, isi nama, nomor WhatsApp, serta alamat, lalu tekan tombol kirim pesanan. Rincian pesanan akan disiapkan untuk dikirim melalui WhatsApp.</p></details>
+    <details class="faq-item"><summary>Apakah harga sudah termasuk ongkos kirim?</summary><p>Total di halaman ini adalah subtotal produk. Ketersediaan, ongkos kirim, dan total akhir dapat dikonfirmasi langsung melalui WhatsApp.</p></details>
+    <details class="faq-item"><summary>Bagaimana memastikan stok dan ukuran produk?</summary><p>Silakan tanyakan saat konfirmasi melalui WhatsApp. Satuan, ukuran, dan ketersediaan dapat berubah.</p></details>
+  </div>
+</section>
+<section class="review-invite" id="reviewInvite" aria-labelledby="reviewTitle" hidden>
+  <div><h2 id="reviewTitle">Pernah berbelanja di sini?</h2><p>Ceritakan pengalaman Anda melalui WhatsApp. Dengan izin Anda, ulasan bisa membantu pelanggan lain mengenal toko kami.</p></div>
+  <a class="review-link" id="reviewLink" href="#" target="_blank" rel="noopener noreferrer">Bagikan pengalaman ↗</a>
+</section>
 </main>
 
 <footer><div class="wrap foot"><div><strong id="footerBrand">SEGAR TAHU & TEMPE</strong><br>Terima kasih telah berbelanja dengan kami.</div><div>Order WhatsApp • Harga dapat berubah sewaktu-waktu</div></div></footer>
 <div class="toast" id="toast"></div>
 
 <script>
-// Temporary test mode: uses the PAT saved by admin.html in this browser.
-// Never embed a GitHub token in this public file.
-const GH_USER = "ariefnurbekti";
-const GH_REPO = "Bahan";
+const SUPABASE_URL = "https://gwoveetcyopsvnsciigv.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_FIpYtqbY054NL5C8zMm-Vw_yuFqyuM1";
 
 let storeData={
   storeName:"Segar Tahu & Tempe",
@@ -138,13 +211,36 @@ let storeData={
 let cart={};
 
 async function fetchCatalog(){
+  let supabaseError;
   try{
-    let res = await fetch('katalog.json?_=' + Date.now());
-    if(!res.ok) throw new Error(`HTTP ${res.status}`);
-    let data = await res.json();
-    if(data && Array.isArray(data.products)) storeData = data;
-    else throw new Error('Format katalog.json tidak valid');
-  }catch(e){showToast('Katalog belum termuat: '+e.message);}
+    const response=await fetch(`${SUPABASE_URL}/rest/v1/store_catalog?select=catalog&id=eq.true`,{
+      headers:{
+        'apikey':SUPABASE_PUBLISHABLE_KEY,
+        'Authorization':`Bearer ${SUPABASE_PUBLISHABLE_KEY}`
+      },
+      cache:'no-store'
+    });
+    if(!response.ok) throw new Error(`Supabase HTTP ${response.status}`);
+    const rows=await response.json();
+    if(!Array.isArray(rows)||!rows[0]?.catalog||!Array.isArray(rows[0].catalog.products)){
+      throw new Error('Katalog Supabase belum tersedia');
+    }
+    storeData=rows[0].catalog;
+    render();
+    return;
+  }catch(error){
+    supabaseError=error;
+  }
+  try{
+    const response=await fetch('katalog.json?_='+Date.now());
+    if(!response.ok) throw new Error(`katalog.json HTTP ${response.status}`);
+    const data=await response.json();
+    if(!data||!Array.isArray(data.products)) throw new Error('Format katalog.json tidak valid');
+    storeData=data;
+    showToast('Pengaturan Supabase belum termuat; menampilkan katalog lokal sementara.');
+  }catch(error){
+    showToast(`Katalog belum termuat: ${supabaseError.message}; ${error.message}`);
+  }
   render();
 }
 
@@ -154,6 +250,14 @@ function render(){
   const name=storeData.storeName||"Segar Tahu & Tempe";
   document.getElementById('navBrandName').textContent=name.toUpperCase();
   document.getElementById('footerBrand').textContent=name.toUpperCase();
+  const reviewInvite=document.getElementById('reviewInvite');
+  if(storeData.waNumber){
+    const reviewMessage=`Halo ${name}, saya ingin membagikan pengalaman berbelanja.`;
+    document.getElementById('reviewLink').href='https://wa.me/'+storeData.waNumber+'?text='+encodeURIComponent(reviewMessage);
+    reviewInvite.hidden=false;
+  }else{
+    reviewInvite.hidden=true;
+  }
 
   const banner=storeData.banner;
   const bannerEl=document.getElementById('trustBanner');
@@ -185,12 +289,14 @@ function render(){
       : '🧈';
     return `<article class="product">
       <div class="product-visual">${visualHTML}</div>
-      <h3>${escapeHTML(p.name)}</h3>
+      <div class="product-header">
+        <h3>${escapeHTML(p.name)}</h3>
+      </div>
       <div class="desc">${escapeHTML(p.desc||'Produk segar pilihan')}</div>
       <div class="price">${rupiah(p.price)}</div>
       <div class="qtyrow">
         <button aria-label="Kurangi" onclick="changeQty('${p.id}',-1)">−</button>
-        <span class="qty" id="qty-${p.id}">${cart[p.id]||0}</span>
+        <input class="qty" id="qty-${p.id}" type="number" min="0" step="1" inputmode="numeric" value="${cart[p.id]||0}" aria-label="Jumlah ${escapeHTML(p.name)}" oninput="setQty('${p.id}',this.value)">
         <button aria-label="Tambah" onclick="changeQty('${p.id}',1)">+</button>
       </div>
       <button class="add" onclick="addProduct('${p.id}')">Tambah Pesanan</button>
@@ -200,7 +306,8 @@ function render(){
 }
 
 function escapeHTML(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function changeQty(id,delta){cart[id]=Math.max(0,(cart[id]||0)+delta);const el=document.getElementById('qty-'+id);if(el)el.textContent=cart[id];updateOrder()}
+function changeQty(id,delta){cart[id]=Math.max(0,(cart[id]||0)+delta);const el=document.getElementById('qty-'+id);if(el)el.value=cart[id];updateOrder()}
+function setQty(id,value){if(value===''){cart[id]=0}else{const quantity=Number(value);if(Number.isSafeInteger(quantity)&&quantity>=0)cart[id]=quantity}updateOrder()}
 function addProduct(id){changeQty(id,1);const p=storeData.products.find(x=>x.id===id);if(p)showToast(p.name+' ditambahkan')}
 function updateOrder(){
   const prods=storeData.products||[];
@@ -210,40 +317,24 @@ function updateOrder(){
   document.getElementById('summary').textContent=selected.length?selected.map(p=>`${p.name} × ${cart[p.id]}`).join(' • '):'Belum ada produk dipilih. Tekan tombol + untuk menambahkan.';
 }
 
-async function recordOrderToGitHub(orderData) {
-  const token=localStorage.getItem('gh_token')||'';
-  const user=localStorage.getItem('gh_user')||GH_USER;
-  const repo=localStorage.getItem('gh_repo')||GH_REPO;
-  if(!token) throw new Error('Token GitHub belum disimpan di admin pada browser ini.');
-
-  const url=`https://api.github.com/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/contents/orders.json`;
-  const headers={'Authorization':'Bearer '+token,'Content-Type':'application/json'};
-  const getRes=await fetch(url,{headers});
-  let orders=[];
-  let sha;
-  if(getRes.ok){
-    const file=await getRes.json();
-    sha=file.sha;
-    orders=JSON.parse(decodeBase64Utf8(file.content));
-    if(!Array.isArray(orders)) throw new Error('Format orders.json tidak valid.');
-  }else if(getRes.status!==404){
-    throw new Error(`GitHub gagal membaca order (HTTP ${getRes.status}).`);
-  }
-  orders.push({...orderData,date:new Date().toLocaleString('id-ID')});
-
-  const putRes=await fetch(url,{
-    method:'PUT',
-    headers,
-    body:JSON.stringify({
-      message:'New test order from '+orderData.name,
-      content:btoa(unescape(encodeURIComponent(JSON.stringify(orders,null,2)))),
-      sha
-    })
+async function recordOrderToSupabase(orderData) {
+  const res=await fetch(`${SUPABASE_URL}/rest/v1/orders`,{
+    method:'POST',
+    headers:{
+      'apikey':SUPABASE_PUBLISHABLE_KEY,
+      'Authorization':'Bearer '+SUPABASE_PUBLISHABLE_KEY,
+      'Content-Type':'application/json',
+      'Prefer':'return=minimal'
+    },
+    body:JSON.stringify(orderData)
   });
-  if(!putRes.ok) throw new Error(`GitHub gagal menyimpan order (HTTP ${putRes.status}).`);
+  if(!res.ok){
+    const detail=(await res.text()).trim();
+    throw new Error(`Supabase menolak pesanan (HTTP ${res.status})${detail?`: ${detail}`:''}`);
+  }
 }
 
-function checkout(){
+async function checkout(){
   const prods=storeData.products||[];
   const selected=prods.filter(p=>(cart[p.id]||0)>0);
   if(!selected.length){showToast('Pilih produk terlebih dahulu.');return}
@@ -259,18 +350,39 @@ function checkout(){
 
   const total=selected.reduce((s,p)=>s+p.price*cart[p.id],0);
   const lines=selected.map(p=>`• ${p.name} x ${cart[p.id]} = ${rupiah(p.price*cart[p.id])}`).join('\n');
-  const itemsSummary = selected.map(p=>`${p.name} x${cart[p.id]}`).join(', ');
-  
-  recordOrderToGitHub({
-    name, phone, address,
-    items: itemsSummary,
-    total: rupiah(total)
-  }).then(()=>showToast('Pesanan berhasil dicatat. Membuka WhatsApp...'))
-    .catch(e=>showToast('Order WhatsApp siap, tetapi gagal dicatat ke GitHub: '+e.message));
 
-  const message=`Halo ${storeData.storeName}, saya ingin memesan:\n\n*DATA PEMESAN:*\nNama: ${name}\nNo. Telp: ${phone}\nAlamat Kirim: ${address}\n\n*DETAIL PESANAN:*\n${lines}\n\n*Total Sementara:* ${rupiah(total)}\n\nMohon konfirmasi ketersediaan dan total biaya kirimnya. Terima kasih!`;
-  
-  window.open('https://wa.me/'+storeData.waNumber+'?text='+encodeURIComponent(message),'_blank','noopener,noreferrer');
+  const message=`Halo ${storeData.storeName}, saya ingin memesan:\n\n*DATA PEMESAN:*\nNama: ${name}\nNo. Telp: ${phone}\nAlamat Kirim: ${address}\n\n*DETAIL PESANAN:*\n${lines}\n\n*Total Sementara:* ${rupiah(total)}\n\nMohon konfirmasi ketersediaan, stok, serta estimasi biaya kirimnya. Terima kasih!`;
+  const whatsappUrl='https://wa.me/'+storeData.waNumber+'?text='+encodeURIComponent(message);
+  const checkoutButton=document.querySelector('.checkout');
+  const whatsappWindow=window.open('about:blank','_blank');
+  checkoutButton.disabled=true;
+  checkoutButton.textContent='Menyimpan pesanan...';
+
+  try{
+    await recordOrderToSupabase({
+      name,phone,address,
+      items:selected.map(p=>({
+        product_id:p.id,
+        name:p.name,
+        quantity:cart[p.id],
+        unit_price:p.price,
+        subtotal:p.price*cart[p.id]
+      })),
+      total_amount:total
+    });
+    showToast('Pesanan berhasil dicatat. Membuka WhatsApp...');
+    if(whatsappWindow){
+      whatsappWindow.opener=null;
+      whatsappWindow.location.replace(whatsappUrl);
+    }
+    else window.location.assign(whatsappUrl);
+  }catch(e){
+    if(whatsappWindow) whatsappWindow.close();
+    showToast('Pesanan belum tercatat. Coba lagi atau hubungi toko: '+e.message);
+  }finally{
+    checkoutButton.disabled=false;
+    checkoutButton.textContent='Kirim Pesanan via WhatsApp ↗';
+  }
 }
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(window.toastTimer);window.toastTimer=setTimeout(()=>t.style.display='none',3000)}
 
