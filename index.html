@@ -178,7 +178,7 @@ body.confirm-open{overflow:hidden}
   <div class="feature-box"><strong>Rasa pas untuk semua menu</strong><span>Siap bikin masakan sederhana maupun sajian yang lebih istimewa.</span></div>
   <div class="feature-box"><strong>Pembayaran praktis</strong><span>Pilih produk, isi data pengiriman, lalu bayar dengan metode yang tersedia di Midtrans.</span></div>
 </div>
-<div class="section-head"><div><h2>Pricelist Produk</h2><p>Pilih jumlah produk yang ingin dipesan.</p></div><div class="tag">Harga dalam Rupiah</div></div>
+<div class="section-head"><div><h2>Pricelist Produk</h2><p>Tentukan jumlah, lalu tekan Tambah Pesanan agar masuk ke ringkasan.</p></div><div class="tag">Harga dalam Rupiah</div></div>
 <div class="grid" id="products"></div>
 <p class="note">* Satuan/ukuran produk dan ketersediaan dapat dikonfirmasi melalui WhatsApp.</p>
 
@@ -194,7 +194,7 @@ body.confirm-open{overflow:hidden}
   <div class="panel-box summary-box">
     <div>
       <h2>Ringkasan Pesanan</h2>
-      <p id="summaryEmpty" style="margin-top:8px">Belum ada produk dipilih. Tekan tombol + untuk menambahkan.</p>
+      <p id="summaryEmpty" style="margin-top:8px">Belum ada produk dipilih. Tentukan jumlah pada produk, lalu tekan Tambah Pesanan.</p>
       <div class="summary-list" id="summaryItems" aria-live="polite"></div>
     </div>
     <div class="total-area">
@@ -262,6 +262,7 @@ let storeData={
   ]
 };
 let cart={};
+let draftQuantities={};
 
 async function fetchCatalog(){
   let supabaseError;
@@ -349,8 +350,12 @@ function render(){
   }
 
   let prods=storeData.products||[];
-  for(const p of prods) if(!(p.id in cart)) cart[p.id]=0;
+  for(const p of prods){
+    if(!(p.id in cart)) cart[p.id]=0;
+    if(!(p.id in draftQuantities)) draftQuantities[p.id]=0;
+  }
   for(const id of Object.keys(cart)) if(!prods.some(p=>p.id===id)) delete cart[id];
+  for(const id of Object.keys(draftQuantities)) if(!prods.some(p=>p.id===id)) delete draftQuantities[id];
 
   document.getElementById('products').innerHTML=prods.map(p=>{
     let visualHTML = p.image 
@@ -365,7 +370,7 @@ function render(){
       <div class="price">${rupiah(p.price)}</div>
       <div class="qtyrow">
         <button aria-label="Kurangi" onclick="changeQty('${p.id}',-1)">−</button>
-        <input class="qty" id="qty-${p.id}" type="number" min="0" step="1" inputmode="numeric" value="${cart[p.id]||0}" aria-label="Jumlah ${escapeHTML(p.name)}" oninput="setQty('${p.id}',this.value)">
+        <input class="qty" id="qty-${p.id}" type="number" min="0" step="1" inputmode="numeric" value="${draftQuantities[p.id]||0}" aria-label="Jumlah ${escapeHTML(p.name)} yang akan ditambahkan" oninput="setQty('${p.id}',this.value)">
         <button aria-label="Tambah" onclick="changeQty('${p.id}',1)">+</button>
       </div>
       <button class="add" onclick="addProduct('${p.id}')">Tambah Pesanan</button>
@@ -375,9 +380,24 @@ function render(){
 }
 
 function escapeHTML(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function changeQty(id,delta){cart[id]=Math.max(0,(cart[id]||0)+delta);const el=document.getElementById('qty-'+id);if(el)el.value=cart[id];updateOrder()}
-function setQty(id,value){if(value===''){cart[id]=0}else{const quantity=Number(value);if(Number.isSafeInteger(quantity)&&quantity>=0)cart[id]=quantity}updateOrder()}
-function addProduct(id){changeQty(id,1);const p=storeData.products.find(x=>x.id===id);if(p)showToast(p.name+' ditambahkan')}
+function changeQty(id,delta){draftQuantities[id]=Math.max(0,(draftQuantities[id]||0)+delta);const el=document.getElementById('qty-'+id);if(el)el.value=draftQuantities[id]}
+function setQty(id,value){if(value===''){draftQuantities[id]=0;return}const quantity=Number(value);if(Number.isSafeInteger(quantity)&&quantity>=0)draftQuantities[id]=quantity}
+function addProduct(id){
+  const quantity=draftQuantities[id]||0;
+  const product=storeData.products.find(item=>item.id===id);
+  if(!product) return;
+  if(!Number.isSafeInteger(quantity)||quantity<1){
+    showToast('Masukkan jumlah produk terlebih dahulu.');
+    document.getElementById('qty-'+id)?.focus();
+    return;
+  }
+  cart[id]=(cart[id]||0)+quantity;
+  draftQuantities[id]=0;
+  const input=document.getElementById('qty-'+id);
+  if(input) input.value='0';
+  updateOrder();
+  showToast(`${product.name} × ${quantity} ditambahkan ke pesanan`);
+}
 function renderOrderSummary(target,selected){
   target.innerHTML=selected.map(product=>{
     const quantity=cart[product.id]||0;
