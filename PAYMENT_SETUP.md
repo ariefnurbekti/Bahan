@@ -4,7 +4,7 @@ Checkout meminta harga produk langsung dari `store_catalog` di Supabase. Nilai h
 
 ## 1. Jalankan migration Supabase
 
-Jalankan `supabase/migrations/20261021106000_add_midtrans_payment_tracking.sql` pada project Supabase yang dipakai toko. Pesanan lama akan diberi status `manual`; pesanan dari checkout Midtrans akan memakai status `pending` sampai notifikasi pembayaran diterima. Migration ini juga menonaktifkan insert order publik agar pesanan baru hanya dibuat oleh Worker.
+Jalankan semua migration di `supabase/migrations` secara berurutan pada project Supabase yang dipakai toko, termasuk `20261022100000_add_whatsapp_sales_outcome.sql`. Pesanan lama akan diberi status `manual`; pesanan dari checkout Midtrans akan memakai status `pending` sampai notifikasi pembayaran diterima. Migration terkait pembayaran juga menonaktifkan insert order publik agar pesanan baru hanya dibuat oleh Worker. Migration terbaru menambahkan hasil follow-up WhatsApp Close Won/Close Lost.
 
 ## 2. Deploy Worker
 

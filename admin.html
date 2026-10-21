@@ -49,7 +49,7 @@ button:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid #d6a4
 .setup p{margin:10px 0 7px;color:var(--muted);font-size:12px;line-height:1.55}
 .setup code{display:block;white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;border-radius:9px;background:#eaf0eb;color:#18332a;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
 .dashboard{display:none}
-.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px}
 .metric{position:relative;overflow:hidden;background:#fff;border:1px solid var(--line);border-radius:17px;padding:18px;box-shadow:0 5px 18px rgba(22,62,39,.035)}
 .metric:after{content:"";position:absolute;width:72px;height:72px;right:-26px;bottom:-34px;border-radius:50%;background:var(--green-light)}
 .metric-label{color:var(--muted);font-size:12px;font-weight:700}
@@ -94,6 +94,10 @@ tbody tr:hover{background:#fbfdfb}
 .payment-status-paid{background:#e7f5eb;color:#176b45}
 .payment-status-pending{background:#fff6df;color:#805b08}
 .payment-status-failed,.payment-status-expired,.payment-status-cancelled{background:#fff0ef;color:#922a24}
+.whatsapp-outcomes{display:grid;gap:6px;min-width:110px}
+.whatsapp-outcome{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:11px;font-weight:700;white-space:nowrap}
+.whatsapp-outcome input{accent-color:var(--green);margin:0}
+.whatsapp-outcome-lost input{accent-color:#b7443a}
 .address{max-width:220px;min-width:150px;white-space:pre-wrap;overflow-wrap:anywhere;color:#526259}
 .product-order-cell{min-width:110px;text-align:center}
 .product-order-cell strong{display:block;white-space:nowrap}
@@ -207,6 +211,8 @@ on conflict (email) do nothing;</code>
         <article class="metric"><div class="metric-label">Nilai pesanan keseluruhan</div><div class="metric-value" id="metricRevenue">—</div><div class="metric-note">Subtotal produk, sebelum ongkir</div></article>
         <article class="metric"><div class="metric-label">Pesanan hari ini</div><div class="metric-value" id="metricToday">—</div><div class="metric-note" id="metricTodayNote">Nilai pesanan hari ini</div></article>
         <article class="metric"><div class="metric-label">Rata-rata nilai pesanan</div><div class="metric-value" id="metricAverage">—</div><div class="metric-note">Subtotal rata-rata per pesanan</div></article>
+        <article class="metric"><div class="metric-label">Pesanan via WhatsApp</div><div class="metric-value" id="metricWhatsAppOrders">—</div><div class="metric-note">Pelanggan konfirmasi melalui WhatsApp</div></article>
+        <article class="metric"><div class="metric-label">Checkout langsung</div><div class="metric-value" id="metricDirectOrders">—</div><div class="metric-note">Pesanan melalui pembayaran Midtrans</div></article>
       </div>
       <div class="report-grid">
         <section class="report-card">
@@ -230,8 +236,8 @@ on conflict (email) do nothing;</code>
         </div>
         <div class="table-responsive">
           <table>
-            <thead><tr id="ordersTableHead"><th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th><th>Pembayaran</th><th>Total</th><th>Aksi</th></tr></thead>
-            <tbody id="ordersTableBody"><tr><td colspan="6" class="empty">Masuk untuk memuat laporan pesanan.</td></tr></tbody>
+            <thead><tr id="ordersTableHead"><th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th><th>Hasil WhatsApp</th><th>Pembayaran</th><th>Total</th><th>Aksi</th></tr></thead>
+            <tbody id="ordersTableBody"><tr><td colspan="7" class="empty">Masuk untuk memuat laporan pesanan.</td></tr></tbody>
           </table>
         </div>
         <div class="table-foot"><span id="tableFootNote">Data pesanan dilindungi akses admin. <span id="realtimeStatus" aria-live="polite">Menghubungkan ke sinkronisasi langsung...</span></span><span id="lastUpdated"></span></div>
@@ -437,15 +443,18 @@ function paymentStatusLabel(status){
   };
   return Object.hasOwn(labels,status)?labels[status]:{label:'Tidak diketahui',className:''};
 }
+function isWhatsAppOrder(order){
+  return order.payment_gateway==='manual'||order.payment_status==='manual';
+}
 function ordersTableColumnCount(){
-  return 6+orderProductNames().length;
+  return 7+orderProductNames().length;
 }
 function setOrdersTableHeader(productNames){
   const head=document.getElementById('ordersTableHead');
   head.innerHTML='<th>Waktu</th><th>Pelanggan</th><th>Alamat kirim</th>'+
     productNames.map(name=>`<th class="product-order-header">${escapeHTML(name)}</th>`).join('')+
-    '<th>Pembayaran</th><th>Total</th><th>Aksi</th>';
-  const width=Math.max(1050,850+productNames.length*125);
+    '<th>Hasil WhatsApp</th><th>Pembayaran</th><th>Total</th><th>Aksi</th>';
+  const width=Math.max(1180,980+productNames.length*125);
   document.querySelector('.table-responsive table').style.minWidth=`${width}px`;
 }
 async function loadOrders(silent=false){
@@ -467,7 +476,7 @@ async function loadOrders(silent=false){
   try{
     const allOrders=[];
     for(let offset=0;;offset+=PAGE_SIZE){
-      const response=await supabaseFetch('/rest/v1/orders?select=id,created_at,name,phone,address,items,total_amount,payment_status,transaction_status&order=created_at.desc',{
+      const response=await supabaseFetch('/rest/v1/orders?select=id,created_at,name,phone,address,items,total_amount,payment_status,payment_gateway,whatsapp_outcome,transaction_status&order=created_at.desc',{
         headers:{'Range-Unit':'items','Range':`${offset}-${offset+PAGE_SIZE-1}`},
         cache:'no-store'
       });
@@ -677,11 +686,15 @@ function renderReports(){
   const todayOrders=ordersList.filter(order=>localDateKey(new Date(order.created_at))===todayKey);
   const revenue=ordersList.reduce((sum,order)=>sum+(Number(order.total_amount)||0),0);
   const todayRevenue=todayOrders.reduce((sum,order)=>sum+(Number(order.total_amount)||0),0);
+  const whatsappOrders=ordersList.filter(isWhatsAppOrder).length;
+  const directOrders=ordersList.filter(order=>order.payment_gateway==='midtrans').length;
   document.getElementById('metricOrders').textContent=new Intl.NumberFormat('id-ID').format(ordersList.length);
   document.getElementById('metricRevenue').textContent=money(revenue);
   document.getElementById('metricToday').textContent=new Intl.NumberFormat('id-ID').format(todayOrders.length);
   document.getElementById('metricTodayNote').textContent=`Nilai order hari ini ${money(todayRevenue)}`;
   document.getElementById('metricAverage').textContent=money(ordersList.length?revenue/ordersList.length:0);
+  document.getElementById('metricWhatsAppOrders').textContent=new Intl.NumberFormat('id-ID').format(whatsappOrders);
+  document.getElementById('metricDirectOrders').textContent=new Intl.NumberFormat('id-ID').format(directOrders);
   renderWeeklyChart();
   renderTopProducts();
   renderOrdersTable();
@@ -760,11 +773,18 @@ function renderOrdersTable(){
         :'<td class="product-order-cell">—</td>';
     }).join('');
     const payment=paymentStatusLabel(order.payment_status);
+    const whatsappOutcome=isWhatsAppOrder(order)
+      ?`<div class="whatsapp-outcomes">
+          <label class="whatsapp-outcome"><input type="checkbox" data-whatsapp-outcome="won" data-order-id="${escapeHTML(order.id)}" ${order.whatsapp_outcome==='won'?'checked':''}> Close Won</label>
+          <label class="whatsapp-outcome whatsapp-outcome-lost"><input type="checkbox" data-whatsapp-outcome="lost" data-order-id="${escapeHTML(order.id)}" ${order.whatsapp_outcome==='lost'?'checked':''}> Close Lost</label>
+        </div>`
+      :'<span class="customer-contact">—</span>';
     return `<tr>
       <td>${escapeHTML(dateLabel(order.created_at,{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}))}</td>
       <td><span class="customer">${escapeHTML(order.name)}</span><span class="customer-contact">${escapeHTML(order.phone)}</span></td>
       <td><div class="address">${escapeHTML(order.address)}</div></td>
       ${productCells}
+      <td>${whatsappOutcome}</td>
       <td><span class="payment-status payment-status-${payment.className}">${escapeHTML(payment.label)}</span></td>
       <td><span class="amount">${money(order.total_amount)}</span></td>
       <td><div class="order-actions">
@@ -773,6 +793,35 @@ function renderOrdersTable(){
       </div></td>
     </tr>`;
   }).join('');
+}
+async function updateWhatsAppOutcome(input){
+  const orderId=input.dataset.orderId;
+  const outcome=input.dataset.whatsappOutcome;
+  const order=ordersList.find(item=>item.id===orderId);
+  if(!order||!isWhatsAppOrder(order)||!['won','lost'].includes(outcome)) return;
+  const nextOutcome=input.checked?outcome:null;
+  input.disabled=true;
+  const row=input.closest('tr');
+  row.querySelectorAll('[data-whatsapp-outcome]').forEach(checkbox=>checkbox.disabled=true);
+  try{
+    const response=await supabaseFetch(`/rest/v1/orders?id=eq.${encodeURIComponent(orderId)}`,{
+      method:'PATCH',
+      headers:{'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({whatsapp_outcome:nextOutcome})
+    });
+    if(!response.ok){
+      const detail=(await response.text()).trim();
+      throw new Error(`Gagal menyimpan hasil WhatsApp (HTTP ${response.status})${detail?`: ${detail}`:''}`);
+    }
+    const rows=await response.json();
+    if(!Array.isArray(rows)||rows.length!==1) throw new Error('Hasil WhatsApp tidak tersimpan. Pastikan migration hasil WhatsApp sudah dijalankan dan akun Anda terdaftar sebagai admin.');
+    order.whatsapp_outcome=nextOutcome;
+    renderOrdersTable();
+    hideNotice(document.getElementById('dashboardNotice'));
+  }catch(error){
+    renderOrdersTable();
+    showNotice(document.getElementById('dashboardNotice'),error.message);
+  }
 }
 function orderItemUnitPrice(item){
   const unitPrice=Number(item?.unit_price);
@@ -933,6 +982,8 @@ function clearReports(){
   document.getElementById('metricToday').textContent='—';
   document.getElementById('metricTodayNote').textContent='Pesanan masuk hari ini';
   document.getElementById('metricAverage').textContent='—';
+  document.getElementById('metricWhatsAppOrders').textContent='—';
+  document.getElementById('metricDirectOrders').textContent='—';
   document.getElementById('weeklyChart').replaceChildren();
   document.getElementById('topProducts').innerHTML='<div class="empty">Belum ada data produk.</div>';
 }
@@ -1291,7 +1342,7 @@ function exportOrdersToCSV(){
     return;
   }
   const productNames=orderProductNames();
-  const rows=[['Waktu','Nama Pelanggan','No. Telepon','Alamat Kirim',...productNames.map(name=>`${name} (jumlah; subtotal)`),'Status Pembayaran','Total']];
+  const rows=[['Waktu','Nama Pelanggan','No. Telepon','Alamat Kirim',...productNames.map(name=>`${name} (jumlah; subtotal)`),'Hasil WhatsApp','Status Pembayaran','Total']];
   for(const order of selected){
     const items=orderItemsByName(order);
     rows.push([
@@ -1301,6 +1352,7 @@ function exportOrdersToCSV(){
         const item=items.get(name);
         return item?`${item.quantity} unit; ${item.subtotal}`:'';
       }),
+      isWhatsAppOrder(order)?(order.whatsapp_outcome==='won'?'Close Won':order.whatsapp_outcome==='lost'?'Close Lost':'Belum ditandai'):'',
       paymentStatusLabel(order.payment_status).label,
       order.total_amount
     ]);
@@ -1371,7 +1423,7 @@ async function logout(){
   catalogDraft=null;
   catalogLoaded=false;
   setSignedIn(false);
-  document.getElementById('ordersTableBody').innerHTML='<tr><td colspan="6" class="empty">Masuk untuk memuat laporan pesanan.</td></tr>';
+  document.getElementById('ordersTableBody').innerHTML='<tr><td colspan="7" class="empty">Masuk untuk memuat laporan pesanan.</td></tr>';
   document.getElementById('orderCount').textContent='Masuk untuk melihat riwayat pesanan';
   if(current?.access_token){
     try{
@@ -1398,6 +1450,10 @@ document.getElementById('ordersTableBody').addEventListener('click',event=>{
   if(!button) return;
   if(button.dataset.orderAction==='edit') openOrderEditor(button.dataset.orderId);
   if(button.dataset.orderAction==='delete') deleteOrder(button.dataset.orderId);
+});
+document.getElementById('ordersTableBody').addEventListener('change',event=>{
+  const input=event.target.closest('[data-whatsapp-outcome]');
+  if(input) updateWhatsAppOutcome(input);
 });
 document.getElementById('orderEditForm').addEventListener('submit',saveOrderEdit);
 document.getElementById('closeOrderDialog').addEventListener('click',closeOrderEditor);
