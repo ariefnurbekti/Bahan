@@ -211,10 +211,10 @@ on conflict (email) do nothing;</code>
         <article class="metric"><div class="metric-label">Nilai pesanan keseluruhan</div><div class="metric-value" id="metricRevenue">—</div><div class="metric-note">Subtotal, tidak termasuk Close Lost</div></article>
         <article class="metric"><div class="metric-label">Pesanan hari ini</div><div class="metric-value" id="metricToday">—</div><div class="metric-note" id="metricTodayNote">Nilai pesanan hari ini</div></article>
         <article class="metric"><div class="metric-label">Rata-rata nilai pesanan</div><div class="metric-value" id="metricAverage">—</div><div class="metric-note">Subtotal rata-rata, tidak termasuk Close Lost</div></article>
-        <article class="metric"><div class="metric-label">Pesanan via WhatsApp</div><div class="metric-value" id="metricWhatsAppOrders">—</div><div class="metric-note">Pelanggan konfirmasi melalui WhatsApp</div></article>
-        <article class="metric"><div class="metric-label">Checkout langsung</div><div class="metric-value" id="metricDirectOrders">—</div><div class="metric-note">Pesanan melalui pembayaran Midtrans</div></article>
-        <article class="metric"><div class="metric-label">WhatsApp Close Won</div><div class="metric-value" id="metricWhatsAppWon">—</div><div class="metric-note">Pesanan WhatsApp berhasil</div></article>
-        <article class="metric"><div class="metric-label">WhatsApp Close Lost</div><div class="metric-value" id="metricWhatsAppLost">—</div><div class="metric-note">Tidak dihitung dalam total penjualan</div></article>
+        <article class="metric"><div class="metric-label">Pesanan via WhatsApp</div><div class="metric-value" id="metricWhatsAppOrders">—</div><div class="metric-note" id="metricWhatsAppRevenue">Omzet WhatsApp, tidak termasuk Close Lost</div></article>
+        <article class="metric"><div class="metric-label">Checkout langsung</div><div class="metric-value" id="metricDirectOrders">—</div><div class="metric-note" id="metricDirectRevenue">Omzet pembayaran Midtrans</div></article>
+        <article class="metric"><div class="metric-label">WhatsApp Close Won</div><div class="metric-value" id="metricWhatsAppWon">—</div><div class="metric-note" id="metricWhatsAppWonRevenue">Omzet pesanan yang berhasil</div></article>
+        <article class="metric"><div class="metric-label">WhatsApp Close Lost</div><div class="metric-value" id="metricWhatsAppLost">—</div><div class="metric-note" id="metricWhatsAppLostRevenue">Nilai pesanan lost, bukan omzet</div></article>
       </div>
       <div class="report-grid">
         <section class="report-card">
@@ -696,18 +696,24 @@ function renderReports(){
   const revenue=salesOrders.reduce((sum,order)=>sum+(Number(order.total_amount)||0),0);
   const todayRevenue=todayOrders.reduce((sum,order)=>sum+(Number(order.total_amount)||0),0);
   const whatsappOrders=ordersList.filter(isWhatsAppOrder).length;
-  const directOrders=ordersList.filter(order=>order.payment_gateway==='midtrans').length;
-  const whatsappWon=ordersList.filter(order=>isWhatsAppOrder(order)&&order.whatsapp_outcome==='won').length;
-  const whatsappLost=ordersList.filter(isLostWhatsAppOrder).length;
+  const directSales=ordersList.filter(order=>order.payment_gateway==='midtrans');
+  const whatsappWonOrders=ordersList.filter(order=>isWhatsAppOrder(order)&&order.whatsapp_outcome==='won');
+  const whatsappLostOrders=ordersList.filter(isLostWhatsAppOrder);
+  const whatsappSales=salesOrders.filter(isWhatsAppOrder);
+  const sumOrderAmounts=orders=>orders.reduce((sum,order)=>sum+(Number(order.total_amount)||0),0);
   document.getElementById('metricOrders').textContent=new Intl.NumberFormat('id-ID').format(salesOrders.length);
   document.getElementById('metricRevenue').textContent=money(revenue);
   document.getElementById('metricToday').textContent=new Intl.NumberFormat('id-ID').format(todayOrders.length);
   document.getElementById('metricTodayNote').textContent=`Nilai order hari ini ${money(todayRevenue)}`;
   document.getElementById('metricAverage').textContent=money(salesOrders.length?revenue/salesOrders.length:0);
   document.getElementById('metricWhatsAppOrders').textContent=new Intl.NumberFormat('id-ID').format(whatsappOrders);
-  document.getElementById('metricDirectOrders').textContent=new Intl.NumberFormat('id-ID').format(directOrders);
-  document.getElementById('metricWhatsAppWon').textContent=new Intl.NumberFormat('id-ID').format(whatsappWon);
-  document.getElementById('metricWhatsAppLost').textContent=new Intl.NumberFormat('id-ID').format(whatsappLost);
+  document.getElementById('metricWhatsAppRevenue').textContent=`Omzet WhatsApp (tanpa Close Lost): ${money(sumOrderAmounts(whatsappSales))}`;
+  document.getElementById('metricDirectOrders').textContent=new Intl.NumberFormat('id-ID').format(directSales.length);
+  document.getElementById('metricDirectRevenue').textContent=`Omzet checkout langsung: ${money(sumOrderAmounts(directSales))}`;
+  document.getElementById('metricWhatsAppWon').textContent=new Intl.NumberFormat('id-ID').format(whatsappWonOrders.length);
+  document.getElementById('metricWhatsAppWonRevenue').textContent=`Omzet Close Won: ${money(sumOrderAmounts(whatsappWonOrders))}`;
+  document.getElementById('metricWhatsAppLost').textContent=new Intl.NumberFormat('id-ID').format(whatsappLostOrders.length);
+  document.getElementById('metricWhatsAppLostRevenue').textContent=`Nilai Close Lost (bukan omzet): ${money(sumOrderAmounts(whatsappLostOrders))}`;
   renderWeeklyChart();
   renderTopProducts();
   renderOrdersTable();
@@ -996,9 +1002,13 @@ function clearReports(){
   document.getElementById('metricTodayNote').textContent='Pesanan masuk hari ini';
   document.getElementById('metricAverage').textContent='—';
   document.getElementById('metricWhatsAppOrders').textContent='—';
+  document.getElementById('metricWhatsAppRevenue').textContent='Omzet WhatsApp, tidak termasuk Close Lost';
   document.getElementById('metricDirectOrders').textContent='—';
+  document.getElementById('metricDirectRevenue').textContent='Omzet pembayaran Midtrans';
   document.getElementById('metricWhatsAppWon').textContent='—';
+  document.getElementById('metricWhatsAppWonRevenue').textContent='Omzet pesanan yang berhasil';
   document.getElementById('metricWhatsAppLost').textContent='—';
+  document.getElementById('metricWhatsAppLostRevenue').textContent='Nilai pesanan lost, bukan omzet';
   document.getElementById('weeklyChart').replaceChildren();
   document.getElementById('topProducts').innerHTML='<div class="empty">Belum ada data produk.</div>';
 }
