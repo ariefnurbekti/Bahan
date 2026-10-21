@@ -119,7 +119,7 @@ tbody tr:hover{background:#fbfdfb}
 .catalog-fields .wide{grid-column:1/-1}
 .image-edit{display:grid;grid-template-columns:76px minmax(0,1fr);gap:10px;align-items:center}
 .image-preview{width:76px;height:68px;display:grid;place-items:center;overflow:hidden;border:1px solid var(--line);border-radius:10px;background:#f1f4ee;color:var(--muted);font-size:24px}
-.image-preview img{width:100%;height:100%;object-fit:cover}
+.image-preview img,.image-preview video{width:100%;height:100%;object-fit:cover}
 .image-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
 .image-actions input[type="url"]{flex:1 1 180px}
 .upload-label{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:8px 11px;border-radius:9px;background:#eef3ef;color:var(--green);font-size:12px;font-weight:800;cursor:pointer}
@@ -222,7 +222,10 @@ on conflict (email) do nothing;</code>
             <div class="field"><label for="catalogBannerDesc">Deskripsi promo</label><textarea id="catalogBannerDesc" maxlength="240" placeholder="Tulis informasi promo yang benar dan jelas"></textarea></div>
             <h3>Foto banner</h3>
             <div id="bannerImages"></div>
+            <h3>Video banner (opsional)</h3>
+            <div id="bannerVideo"></div>
             <p class="settings-help">Gunakan gambar milik sendiri atau gambar yang memiliki izin untuk digunakan. Unggah foto maksimal 5 MB (JPG, PNG, WebP).</p>
+            <p class="settings-help">Video banner mendukung MP4 atau WebM hingga 50 MB. Pastikan video milik sendiri atau Anda memiliki izin untuk menggunakannya.</p>
           </section>
           <section class="settings-panel">
             <div class="settings-head"><div><h2>Produk dan harga</h2><p id="catalogProductCount">Memuat katalog...</p></div><button class="btn btn-secondary" id="addProductButton" type="button">＋ Tambah produk</button></div>
@@ -497,6 +500,20 @@ function imageEditor(label,value,kind,index){
     </div>
   </div>`;
 }
+function videoEditor(value){
+  const preview=value?`<video src="${escapeHTML(value)}" controls muted playsinline preload="metadata"></video>`:'🎬';
+  return `<div class="field">
+    <label for="bannerVideoUrl">URL video HTTPS</label>
+    <div class="image-edit">
+      <div class="image-preview" id="bannerVideoPreview">${preview}</div>
+      <div class="image-actions">
+        <input id="bannerVideoUrl" type="url" value="${escapeHTML(value)}" placeholder="https://alamat-video...">
+        <label class="upload-label">Unggah video<input id="bannerVideoFile" type="file" accept="video/mp4,video/webm"></label>
+        <button class="btn btn-quiet" id="clearBannerVideo" type="button">Hapus</button>
+      </div>
+    </div>
+  </div>`;
+}
 function renderCatalogSettings(){
   const catalog=catalogDraft;
   document.getElementById('catalogStoreName').value=catalog.storeName||'';
@@ -506,6 +523,7 @@ function renderCatalogSettings(){
   document.getElementById('catalogBannerDesc').value=catalog.banner?.desc||'';
   const bannerImages=Array.isArray(catalog.banner?.images)?catalog.banner.images:[];
   document.getElementById('bannerImages').innerHTML=[0,1,2].map(index=>imageEditor(`Foto banner ${index+1}`,bannerImages[index]||'','banner',index)).join('');
+  document.getElementById('bannerVideo').innerHTML=videoEditor(catalog.banner?.video||'');
   const products=Array.isArray(catalog.products)?catalog.products:[];
   document.getElementById('catalogProductCount').textContent=`${products.length} produk`;
   document.getElementById('catalogProducts').innerHTML=products.length?products.map((product,index)=>`
@@ -523,6 +541,28 @@ function updateImagePreview(kind,index,value){
   const preview=document.querySelector(`[data-preview-kind="${kind}"][data-preview-index="${index}"]`);
   if(!preview) return;
   preview.innerHTML=value?`<img src="${escapeHTML(value)}" alt="Pratinjau foto" onerror="this.parentElement.textContent='🖼️'">`:'🖼️';
+}
+function updateVideoPreview(value){
+  const preview=document.getElementById('bannerVideoPreview');
+  if(!preview) return;
+  preview.innerHTML=value?`<video src="${escapeHTML(value)}" controls muted playsinline preload="metadata"></video>`:'🎬';
+}
+function handleBannerVideoURL(){
+  const input=document.getElementById('bannerVideoUrl');
+  if(!input.value){
+    updateVideoPreview('');
+    return;
+  }
+  try{
+    if(new URL(input.value).protocol!=='https:') return;
+  }catch(error){
+    return;
+  }
+  updateVideoPreview(input.value.trim());
+}
+function handleBannerVideoClear(){
+  document.getElementById('bannerVideoUrl').value='';
+  updateVideoPreview('');
 }
 async function loadCatalogSettings(){
   const notice=document.getElementById('catalogNotice');
@@ -565,7 +605,7 @@ function handleCatalogImageClear(event){
   input.value='';
   updateImagePreview(kind,index,'');
 }
-function validImageURL(value,label){
+function validHTTPSURL(value,label){
   if(!value) return true;
   try{
     const url=new URL(value);
@@ -580,7 +620,9 @@ function collectCatalogSettings(){
   if(!storeName){showNotice(document.getElementById('catalogNotice'),'Nama toko wajib diisi.');return null}
   if(!/^\d{8,15}$/.test(waNumber)){showNotice(document.getElementById('catalogNotice'),'Nomor WhatsApp harus berisi 8–15 digit, termasuk kode negara.');return null}
   const bannerImages=[0,1,2].map(index=>document.querySelector(`[data-image-kind="banner"][data-image-index="${index}"]`)?.value.trim()||'');
-  for(let i=0;i<bannerImages.length;i++) if(!validImageURL(bannerImages[i],`Foto banner ${i+1}`)) return null;
+  for(let i=0;i<bannerImages.length;i++) if(!validHTTPSURL(bannerImages[i],`Foto banner ${i+1}`)) return null;
+  const bannerVideo=document.getElementById('bannerVideoUrl')?.value.trim()||'';
+  if(!validHTTPSURL(bannerVideo,'Video banner')) return null;
   const productRows=[...document.querySelectorAll('.catalog-product')];
   const products=[];
   const productIds=new Set();
@@ -594,7 +636,7 @@ function collectCatalogSettings(){
     const price=Number(priceText);
     if(!name){showNotice(document.getElementById('catalogNotice'),'Semua produk harus memiliki nama.');return null}
     if(priceText===''||!Number.isSafeInteger(price)||price<0||price>1000000000){showNotice(document.getElementById('catalogNotice'),`Harga untuk "${name}" harus berupa bilangan bulat antara Rp0 dan Rp1.000.000.000.`);return null}
-    if(!validImageURL(image,`Foto ${name}`)) return null;
+    if(!validHTTPSURL(image,`Foto ${name}`)) return null;
     const id=previous?.id||`p_${crypto.randomUUID()}`;
     if(productIds.has(id)){showNotice(document.getElementById('catalogNotice'),'ID produk duplikat ditemukan. Muat ulang katalog lalu coba lagi.');return null}
     productIds.add(id);
@@ -607,7 +649,8 @@ function collectCatalogSettings(){
       active:document.getElementById('catalogBannerActive').checked,
       title:document.getElementById('catalogBannerTitle').value.trim(),
       desc:document.getElementById('catalogBannerDesc').value.trim(),
-      images:bannerImages
+      images:bannerImages,
+      video:bannerVideo
     },
     products
   };
@@ -654,7 +697,8 @@ function syncCatalogDraftFromForm(){
       active:document.getElementById('catalogBannerActive').checked,
       title:document.getElementById('catalogBannerTitle').value.trim(),
       desc:document.getElementById('catalogBannerDesc').value.trim(),
-      images:[0,1,2].map(index=>document.querySelector(`[data-image-kind="banner"][data-image-index="${index}"]`)?.value.trim()||'')
+      images:[0,1,2].map(index=>document.querySelector(`[data-image-kind="banner"][data-image-index="${index}"]`)?.value.trim()||''),
+      video:document.getElementById('bannerVideoUrl')?.value.trim()||''
     },
     products:[...document.querySelectorAll('.catalog-product')].map((row,index)=>({
       id:previousProducts[index]?.id||`p_${crypto.randomUUID()}`,
@@ -723,6 +767,52 @@ async function uploadCatalogImage(input){
     urlInput.value=publicUrl;
     updateImagePreview(kind,index,publicUrl);
     showNotice(notice,'Foto berhasil diunggah. Simpan pengaturan toko agar foto tampil di situs.','success');
+  }catch(error){
+    showNotice(notice,error.message);
+  }finally{
+    label.childNodes[0].textContent=previousLabel;
+    input.disabled=false;
+    input.value='';
+  }
+}
+function extensionForVideo(file){
+  return {'video/mp4':'mp4','video/webm':'webm'}[file.type]||'';
+}
+async function uploadBannerVideo(input){
+  const file=input.files?.[0];
+  if(!file) return;
+  const notice=document.getElementById('catalogNotice');
+  hideNotice(notice);
+  if(file.size>50*1024*1024){
+    showNotice(notice,'Ukuran video banner maksimal 50 MB.');
+    input.value='';
+    return;
+  }
+  const extension=extensionForVideo(file);
+  if(!extension){
+    showNotice(notice,'Format video harus MP4 atau WebM.');
+    input.value='';
+    return;
+  }
+  const label=input.closest('.upload-label');
+  const previousLabel=label.textContent.trim();
+  label.childNodes[0].textContent='Mengunggah...';
+  input.disabled=true;
+  try{
+    const objectPath=`videos/${crypto.randomUUID()}.${extension}`;
+    const response=await supabaseFetch(`/storage/v1/object/banner-videos/${objectPath.split('/').map(encodeURIComponent).join('/')}`,{
+      method:'POST',
+      headers:{'Content-Type':file.type,'x-upsert':'false'},
+      body:file
+    });
+    if(!response.ok){
+      const detail=(await response.text()).trim();
+      throw new Error(`Unggah video gagal (HTTP ${response.status})${detail?`: ${detail}`:''}`);
+    }
+    const publicUrl=`${SUPABASE_URL}/storage/v1/object/public/banner-videos/${objectPath.split('/').map(encodeURIComponent).join('/')}`;
+    document.getElementById('bannerVideoUrl').value=publicUrl;
+    updateVideoPreview(publicUrl);
+    showNotice(notice,'Video berhasil diunggah. Simpan pengaturan toko agar video tampil di situs.','success');
   }catch(error){
     showNotice(notice,error.message);
   }finally{
@@ -852,6 +942,13 @@ document.getElementById('bannerImages').addEventListener('input',handleCatalogIm
 document.getElementById('catalogProducts').addEventListener('input',handleCatalogImageURL);
 document.getElementById('bannerImages').addEventListener('change',event=>{
   if(event.target.matches('[data-upload-kind]')) uploadCatalogImage(event.target);
+});
+document.getElementById('bannerVideo').addEventListener('change',handleBannerVideoURL);
+document.getElementById('bannerVideo').addEventListener('click',event=>{
+  if(event.target.closest('#clearBannerVideo')) handleBannerVideoClear();
+});
+document.getElementById('bannerVideo').addEventListener('change',event=>{
+  if(event.target.matches('#bannerVideoFile')) uploadBannerVideo(event.target);
 });
 document.getElementById('catalogProducts').addEventListener('change',event=>{
   if(event.target.matches('[data-upload-kind]')) uploadCatalogImage(event.target);

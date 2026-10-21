@@ -108,6 +108,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{
 @keyframes fade-up{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes soft-pop{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+.hero-art.has-video{height:220px;min-height:0;padding:10px}.hero-video{width:100%;height:100%;object-fit:cover;border-radius:16px}
 </style></head>
 <body>
 <header>
@@ -200,7 +201,7 @@ const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_FIpYtqbY054NL5C8zMm-Vw_yuFqyuM1
 let storeData={
   storeName:"Segar Tahu & Tempe",
   waNumber:"",
-  banner:{active:true,title:"🌟 PROMO SPESIAL: 100% Kedelai Murni Pilihan!",desc:"Higienis, Tanpa Bahan Pengawet, dan Fresh Setiap Hari.",images:["","",""]},
+  banner:{active:true,title:"🌟 PROMO SPESIAL: 100% Kedelai Murni Pilihan!",desc:"Higienis, Tanpa Bahan Pengawet, dan Fresh Setiap Hari.",images:["","",""],video:""},
   products:[
     {id:"besar",name:"Tahu Putih Besar",desc:"Tahu putih ukuran besar",image:"",price:7000},
     {id:"kecil",name:"Tahu Putih Kecil",desc:"Tahu putih ukuran kecil",image:"",price:3000},
@@ -271,10 +272,26 @@ function render(){
 
   const heroArt=document.getElementById('heroArt');
   const bannerImages=Array.isArray(banner?.images)?banner.images.filter(Boolean).slice(0,3):[];
-  if(bannerImages.length){
+  if(banner?.video){
+    heroArt.classList.remove('has-gallery');
+    heroArt.classList.add('has-video');
+    const poster=bannerImages[0]?` poster="${escapeHTML(bannerImages[0])}"`:'';
+    heroArt.innerHTML=`<video class="hero-video" src="${escapeHTML(banner.video)}"${poster} autoplay muted loop playsinline preload="metadata" aria-label="Video banner toko"></video>`;
+    heroArt.querySelector('video').addEventListener('error',()=>{
+      heroArt.classList.remove('has-video');
+      if(bannerImages.length){
+        heroArt.classList.add('has-gallery');
+        heroArt.innerHTML=`<div class="hero-gallery">${bannerImages.map((image,index)=>`<img src="${escapeHTML(image)}" alt="Foto banner ${index+1}" onerror="this.remove()">`).join('')}</div>`;
+      }else{
+        heroArt.innerHTML='<div class="food">🧈 🫘</div><div class="food-caption">Pilihan sederhana untuk menu lezat setiap hari</div>';
+      }
+    },{once:true});
+  }else if(bannerImages.length){
+    heroArt.classList.remove('has-video');
     heroArt.classList.add('has-gallery');
     heroArt.innerHTML=`<div class="hero-gallery">${bannerImages.map((image,index)=>`<img src="${escapeHTML(image)}" alt="Foto banner ${index+1}" onerror="this.remove()">`).join('')}</div>`;
   }else{
+    heroArt.classList.remove('has-video');
     heroArt.classList.remove('has-gallery');
     heroArt.innerHTML='<div class="food">🧈 🫘</div><div class="food-caption">Pilihan sederhana untuk menu lezat setiap hari</div>';
   }
